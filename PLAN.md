@@ -17,7 +17,7 @@
 - [x] Configurar tema em `globals.css` (tokens Índigo/slate, dark mode) e fonte Inter via `next/font`
 - [x] Criar `.env.local` + `.env.example` com as variáveis do CLAUDE.md
 - [~] `supabase/` inicializado (config + migration inicial vazia + seed) — **falta criar o projeto na nuvem** (requer login Supabase)
-- [x] `git init` + commits + branch `feat/project-setup` + **merge na `main`** (push para o GitHub pendente — requer login)
+- [x] `git init` + commits + branch `feat/project-setup` + **merge na `main`** + **push para o GitHub** (`AmandaBfa/PipeFlow-CRM`)
 
 **Aceite:** ✅ `pnpm dev` sobe sem erros; `pnpm lint` e `pnpm typecheck` passam; `pnpm build` OK; página inicial renderiza com a fonte Inter e cores do tema.
 
