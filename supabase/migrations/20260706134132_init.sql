@@ -1,0 +1,2 @@
+﻿-- Migration inicial (vazia).
+-- O schema real (workspaces, workspace_members + policies RLS) entra no Milestone 2.

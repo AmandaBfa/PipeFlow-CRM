@@ -1,0 +1,3 @@
+-- Seed de dados de exemplo para desenvolvimento local.
+-- Executado por `supabase db reset`.
+-- Será preenchido nos próximos milestones (workspaces, leads e deals de exemplo).
