@@ -11,15 +11,15 @@
 
 **Objetivo:** repositório rodando local com stack base configurada.
 
-- [ ] `create-next-app` (App Router, TypeScript, Tailwind, ESLint, alias `@/`)
-- [ ] Instalar deps: `@supabase/supabase-js`, `@supabase/ssr`, `stripe`, `resend`, `@dnd-kit/core`, `@dnd-kit/sortable`, `recharts`, `zod`, `lucide-react`, `sonner`
-- [ ] Inicializar shadcn/ui + componentes base (`button`, `input`, `card`, `dialog`, `dropdown-menu`, `table`, `badge`, `avatar`, `sonner`)
-- [ ] Configurar tema em `globals.css` (tokens Índigo/slate, dark mode) e fonte Inter via `next/font`
-- [ ] Criar `.env.local` + `.env.example` com as variáveis do CLAUDE.md
-- [ ] Projeto Supabase criado; `supabase/` inicializado (CLI); primeira migration vazia
-- [ ] `git init` + primeiro commit + repositório no GitHub
+- [x] `create-next-app` (App Router, TypeScript, Tailwind, ESLint, alias `@/`)
+- [x] Instalar deps: `@supabase/supabase-js`, `@supabase/ssr`, `stripe`, `resend`, `@dnd-kit/core`, `@dnd-kit/sortable`, `recharts`, `zod`, `lucide-react`, `sonner`
+- [x] Inicializar shadcn/ui + componentes base (`button`, `input`, `card`, `dialog`, `dropdown-menu`, `table`, `badge`, `avatar`, `sonner`, `label`)
+- [x] Configurar tema em `globals.css` (tokens Índigo/slate, dark mode) e fonte Inter via `next/font`
+- [x] Criar `.env.local` + `.env.example` com as variáveis do CLAUDE.md
+- [~] `supabase/` inicializado (config + migration inicial vazia + seed) — **falta criar o projeto na nuvem** (requer login Supabase)
+- [x] `git init` + commits + branch `feat/project-setup` + **merge na `main`** (push para o GitHub pendente — requer login)
 
-**Aceite:** `pnpm dev` sobe sem erros; `pnpm lint` e `pnpm typecheck` passam; página inicial renderiza com a fonte e cores do tema.
+**Aceite:** ✅ `pnpm dev` sobe sem erros; `pnpm lint` e `pnpm typecheck` passam; `pnpm build` OK; página inicial renderiza com a fonte Inter e cores do tema.
 
 ---
 
