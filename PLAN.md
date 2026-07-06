@@ -30,11 +30,13 @@
 - [ ] Clients Supabase: `lib/supabase/{server,client,middleware}.ts` (padrão `@supabase/ssr`)
 - [ ] `middleware.ts` fazendo refresh de sessão
 - [ ] Route groups `(auth)` — signup, login, callback OAuth/e-mail
-- [ ] Route group `(dashboard)` protegido — redireciona não autenticado para `/login`
-- [ ] Layout do dashboard: sidebar (placeholder do workspace switcher) + área de conteúdo
-- [ ] Logout
+- [~] Route group `(dashboard)` — criado com o layout do shell; **falta a proteção** (redirect de não autenticado para `/login`)
+- [x] Layout do dashboard: sidebar (com workspace switcher) + barra superior + área de conteúdo
+- [~] Logout — item no menu do usuário (placeholder até a autenticação)
 
 **Aceite:** signup → recebe sessão → acessa `/dashboard`; deslogado é bloqueado nas rotas privadas.
+
+> **Aula 2.1 — Design System & App Shell (concluída):** shell responsivo com sidebar fixa (desktop) + drawer hambúrguer (mobile via `Sheet`), barra superior com título da seção e alternador de tema, **dark mode como padrão** (next-themes), seletor de workspace com dados fake sincronizado entre desktop/mobile via `WorkspaceProvider`, e páginas placeholder (`/dashboard`, `/leads`, `/pipeline`, `/settings`) com empty states. Base reutilizável adicionada: `sheet`, `separator`, `skeleton`, `tooltip`, `ThemeToggle`, `PageHeader`, `EmptyState`. Verificado com `typecheck`/`lint`/`build` + smoke test. **Falta só a autenticação** para fechar o Milestone 1.
 
 ---
 
