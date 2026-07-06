@@ -39,3 +39,6 @@ supabase/.temp
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code (configurações locais da máquina)
+.claude/settings.local.json
