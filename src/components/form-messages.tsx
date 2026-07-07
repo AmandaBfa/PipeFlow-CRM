@@ -2,6 +2,8 @@ import { AlertCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+// Componentes de feedback de formulário compartilhados (auth, leads, etc.).
+
 // Erro de um campo específico (mostra a primeira mensagem do Zod).
 export function FieldError({ errors }: { errors?: string[] }) {
   if (!errors?.length) return null;
