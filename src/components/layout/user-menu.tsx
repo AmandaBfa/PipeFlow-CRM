@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { LogOut, Settings, User } from "lucide-react";
-import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { placeholderUser } from "@/lib/placeholder-data";
 
-// Menu do usuário (dados fake). Logout é placeholder até a aula de autenticação.
+// Menu do usuário (dados fake). "Sair" leva ao login; o logout real (encerrar
+// a sessão do Supabase) entra na aula de wiring.
 export function UserMenu() {
   return (
     <DropdownMenu>
@@ -47,13 +48,13 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          asChild
           className="gap-2 text-destructive focus:text-destructive"
-          onSelect={() =>
-            toast.info("Logout será implementado na aula de autenticação.")
-          }
         >
-          <LogOut className="h-4 w-4" />
-          Sair
+          <Link href="/login">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

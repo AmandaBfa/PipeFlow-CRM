@@ -16,12 +16,11 @@ export default function Home() {
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-3">
-        {/* Temporário: entra direto no shell enquanto a autenticação não existe. */}
         <a
-          href="/dashboard"
+          href="/signup"
           className="inline-flex h-11 items-center rounded-lg bg-primary px-6 font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
-          Ver o app
+          Criar conta grátis
         </a>
         <a
           href="/login"

@@ -29,14 +29,16 @@
 
 - [ ] Clients Supabase: `lib/supabase/{server,client,middleware}.ts` (padrão `@supabase/ssr`)
 - [ ] `middleware.ts` fazendo refresh de sessão
-- [ ] Route groups `(auth)` — signup, login, callback OAuth/e-mail
+- [~] Route groups `(auth)` — telas de **login, cadastro e recuperação de senha** prontas (UI + validação Zod + loading + erros); **callback é stub** e a autenticação real (Supabase) entra na próxima aula
 - [~] Route group `(dashboard)` — criado com o layout do shell; **falta a proteção** (redirect de não autenticado para `/login`)
 - [x] Layout do dashboard: sidebar (com workspace switcher) + barra superior + área de conteúdo
-- [~] Logout — item no menu do usuário (placeholder até a autenticação)
+- [~] Logout — item "Sair" leva ao `/login` (placeholder; logout real com Supabase na próxima aula)
 
 **Aceite:** signup → recebe sessão → acessa `/dashboard`; deslogado é bloqueado nas rotas privadas.
 
 > **Aula 2.1 — Design System & App Shell (concluída):** shell responsivo com sidebar fixa (desktop) + drawer hambúrguer (mobile via `Sheet`), barra superior com título da seção e alternador de tema, **dark mode como padrão** (next-themes), seletor de workspace com dados fake sincronizado entre desktop/mobile via `WorkspaceProvider`, e páginas placeholder (`/dashboard`, `/leads`, `/pipeline`, `/settings`) com empty states. Base reutilizável adicionada: `sheet`, `separator`, `skeleton`, `tooltip`, `ThemeToggle`, `PageHeader`, `EmptyState`. Verificado com `typecheck`/`lint`/`build` + smoke test. **Falta só a autenticação** para fechar o Milestone 1.
+
+> **Aula 2.2 — Auth & Onboarding UI (concluída):** grupo de rotas `(auth)` com layout split-screen (painel de marca + formulário) e telas de **login**, **cadastro** e **recuperação de senha** — todas com **validação Zod por campo**, **loading** nos botões (`useFormStatus`), mensagens de erro e **botões sociais** (Google/GitHub, só UI). Fluxo de **onboarding** em passos (grupo `(onboarding)`): boas-vindas → **nomear o workspace** → convite (opcional) → `/dashboard`. Navegação **fake** por ora — login → `/dashboard`, cadastro → `/onboarding`, sem checar credenciais; a autenticação real do Supabase apenas troca as Server Actions em `lib/actions/auth.ts` (marcadas com `TODO(auth)`). Base adicionada: shadcn `checkbox` e componentes `auth/*`. Verificado com `typecheck`/`lint`/`build` + **teste E2E** (Playwright/Edge) dos 4 fluxos, cobrindo validação, loading, erros e redirects.
 
 ---
 
