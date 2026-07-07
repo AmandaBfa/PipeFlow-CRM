@@ -62,13 +62,15 @@
 **Objetivo:** CRUD completo de leads com busca e filtros.
 
 - [ ] Migration `leads` (name, email, phone, company, position, status, owner_id, workspace_id) + RLS por `workspace_id`
-- [ ] Schemas Zod em `lib/validations/lead.ts`
-- [ ] Server Actions: create / update / delete lead
-- [ ] Lista de leads (`table` shadcn) com busca (nome/e-mail/empresa) e filtros (status, responsável, data)
-- [ ] Formulário de criação/edição (dialog ou página)
-- [ ] Página de detalhe do lead (perfil; timeline entra no Milestone 5)
+- [x] Schemas Zod em `lib/validations/lead.ts` (`leadSchema`) + enum de status em `lib/lead-status.ts` (`new`/`contacted`/`qualified`/`unqualified`/`converted`)
+- [~] Server Actions: create / update / delete lead — **fake em memória** (`LeadsProvider`) na aula 2.3; viram Server Actions do Supabase (marcado com `TODO(leads)`)
+- [~] Lista de leads (`table` shadcn) com busca (nome/e-mail/empresa) ✅ e filtros por status e responsável ✅ — **falta filtro por data**
+- [x] Formulário de criação/edição (**dialog**) com validação Zod, loading e erros por campo
+- [x] Página de detalhe do lead (perfil + **timeline de atividades visual**, adiantada do Milestone 5)
 
 **Aceite:** criar, editar, filtrar e excluir leads; dados isolados por workspace.
+
+> **Aula 2.3 — Gestão de Leads UI (concluída):** UI completa de leads com **dados fake em memória** (`LeadsProvider`): lista em `table` com **busca** (nome/empresa/e-mail) e **filtros** (status, responsável), **badges coloridos por status** (`lead-status-badge`), CRUD via **dialog** (criar/editar/excluir) com validação **Zod** + loading + erros por campo, e **página de detalhe** (`/leads/[id]`) com card de contato e **timeline de atividades visual** (mock). ~13 leads brasileiros semente. Adicionado shadcn `select`; `FieldError`/`FormMessage` movidos para `components/form-messages.tsx` (compartilhado). A persistência real (migration `leads` + RLS + Server Actions) troca as mutações do provider (marcadas com `TODO(leads)`) pelo Supabase. Verificado com `typecheck`/`lint`/`build` + **teste E2E** (13/13).
 
 ---
 

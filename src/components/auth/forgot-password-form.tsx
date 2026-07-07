@@ -10,7 +10,7 @@ import {
   requestPasswordResetAction,
   type AuthFormState,
 } from "@/lib/actions/auth";
-import { FieldError, FormMessage } from "./form-messages";
+import { FieldError, FormMessage } from "@/components/form-messages";
 import { SubmitButton } from "./submit-button";
 
 const initialState: AuthFormState = {};
