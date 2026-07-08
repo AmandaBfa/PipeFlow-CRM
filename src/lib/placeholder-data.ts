@@ -1,6 +1,7 @@
 // Dados fake para o esqueleto visual (aulas 2.1–2.3).
 // Serão substituídos por dados reais do Supabase a partir do Milestone 2.
 
+import type { DealStage } from "@/lib/deal-stage";
 import type { LeadStatus } from "@/lib/lead-status";
 
 export interface PlaceholderWorkspace {
@@ -212,6 +213,10 @@ export const placeholderLeads: PlaceholderLead[] = [
   },
 ];
 
+export function getLead(id: string): PlaceholderLead | undefined {
+  return placeholderLeads.find((lead) => lead.id === id);
+}
+
 // Atividades registradas por lead (timeline). No Milestone 5 viram a tabela
 // `activities`. Aqui são estáticas e só ilustram a timeline visual.
 export type ActivityType = "call" | "email" | "meeting" | "note";
@@ -360,3 +365,135 @@ export function getActivitiesForLead(leadId: string): PlaceholderActivity[] {
     .filter((activity) => activity.leadId === leadId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
+
+// Negócios (deals) do pipeline. No Milestone 4 viram a tabela `deals`.
+// Referenciam leads (lead_*) e responsáveis (mem_*) existentes.
+export interface PlaceholderDeal {
+  id: string;
+  title: string;
+  value: number; // em reais (BRL)
+  stage: DealStage;
+  leadId: string;
+  ownerId: string;
+  dueDate?: string; // "YYYY-MM-DD"
+  createdAt: string; // ISO
+}
+
+export const placeholderDeals: PlaceholderDeal[] = [
+  {
+    id: "deal_1",
+    title: "Implantação do CRM",
+    value: 48000,
+    stage: "negotiation",
+    leadId: "lead_1",
+    ownerId: "mem_2",
+    dueDate: "2026-07-20",
+    createdAt: "2026-06-29T09:30:00",
+  },
+  {
+    id: "deal_2",
+    title: "Plano Pro anual",
+    value: 24000,
+    stage: "contacted",
+    leadId: "lead_2",
+    ownerId: "mem_1",
+    dueDate: "2026-07-15",
+    createdAt: "2026-07-02T14:20:00",
+  },
+  {
+    id: "deal_3",
+    title: "Licenças de acesso",
+    value: 12000,
+    stage: "new_lead",
+    leadId: "lead_3",
+    ownerId: "mem_3",
+    createdAt: "2026-07-05T10:00:00",
+  },
+  {
+    id: "deal_4",
+    title: "Contrato anual",
+    value: 60000,
+    stage: "won",
+    leadId: "lead_4",
+    ownerId: "mem_1",
+    dueDate: "2026-05-25",
+    createdAt: "2026-05-14T08:30:00",
+  },
+  {
+    id: "deal_5",
+    title: "Campanha + CRM",
+    value: 18000,
+    stage: "proposal_sent",
+    leadId: "lead_5",
+    ownerId: "mem_4",
+    dueDate: "2026-07-18",
+    createdAt: "2026-07-01T16:45:00",
+  },
+  {
+    id: "deal_6",
+    title: "Expansão de licenças",
+    value: 36000,
+    stage: "negotiation",
+    leadId: "lead_6",
+    ownerId: "mem_2",
+    dueDate: "2026-07-22",
+    createdAt: "2026-06-21T11:10:00",
+  },
+  {
+    id: "deal_7",
+    title: "Projeto piloto",
+    value: 9000,
+    stage: "lost",
+    leadId: "lead_7",
+    ownerId: "mem_3",
+    createdAt: "2026-06-12T13:00:00",
+  },
+  {
+    id: "deal_8",
+    title: "Consultoria de vendas",
+    value: 15000,
+    stage: "new_lead",
+    leadId: "lead_8",
+    ownerId: "mem_1",
+    createdAt: "2026-07-06T09:40:00",
+  },
+  {
+    id: "deal_9",
+    title: "Pacote Pro — 3 usuários",
+    value: 6000,
+    stage: "contacted",
+    leadId: "lead_9",
+    ownerId: "mem_4",
+    dueDate: "2026-07-25",
+    createdAt: "2026-07-02T15:25:00",
+  },
+  {
+    id: "deal_10",
+    title: "Integração via API",
+    value: 42000,
+    stage: "proposal_sent",
+    leadId: "lead_10",
+    ownerId: "mem_2",
+    dueDate: "2026-07-19",
+    createdAt: "2026-06-26T17:30:00",
+  },
+  {
+    id: "deal_11",
+    title: "Migração de planilha",
+    value: 21000,
+    stage: "won",
+    leadId: "lead_11",
+    ownerId: "mem_1",
+    dueDate: "2026-04-22",
+    createdAt: "2026-04-18T09:00:00",
+  },
+  {
+    id: "deal_12",
+    title: "Projeto CRM Solar",
+    value: 30000,
+    stage: "new_lead",
+    leadId: "lead_12",
+    ownerId: "mem_3",
+    createdAt: "2026-07-04T11:55:00",
+  },
+];

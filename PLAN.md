@@ -79,13 +79,15 @@
 **Objetivo:** board de negócios com drag-and-drop persistido.
 
 - [ ] Migration `deals` (title, value, stage, lead_id, owner_id, due_date, workspace_id) + RLS
-- [ ] Enum de etapas: `new_lead → contacted → proposal_sent → negotiation → won → lost`
-- [ ] Board com @dnd-kit: colunas por etapa, cards arrastáveis (`"use client"`)
-- [ ] Card: título, valor (R$), lead vinculado, responsável, prazo
-- [ ] Persistir mudança de etapa (Server Action ao soltar o card) com update otimista
-- [ ] Criar/editar negócio a partir do board
+- [x] Enum de etapas: `new_lead → contacted → proposal_sent → negotiation → won → lost` (`lib/deal-stage.ts`)
+- [x] Board com @dnd-kit: colunas por etapa, cards arrastáveis (`"use client"`)
+- [x] Card: título, valor (R$), lead vinculado, responsável, prazo
+- [~] Persistir mudança de etapa — **update otimista em memória** (`moveDeal`) na aula 2.4; Server Action real (Supabase) marcada com `TODO(deals)`
+- [x] Criar/editar negócio a partir do board
 
 **Aceite:** arrastar card entre colunas atualiza a etapa no banco e sobrevive a reload.
+
+> **Aula 2.4 — Pipeline Kanban UI (concluída):** board Kanban de negócios com **dados fake em memória** (`DealsProvider`): **6 colunas por etapa** (`lib/deal-stage.ts`) com cor própria, contagem e **total em R$** por coluna; **cards arrastáveis** (@dnd-kit: `DndContext` + `useDroppable`/`useDraggable` + `DragOverlay`) com título, valor, lead/empresa, responsável e prazo; **drag-and-drop entre colunas** com update otimista + toast; CRUD via **dialog** (criar/editar/excluir, validação Zod); **busca** por título + **filtro** por responsável; 12 negócios semente. Polimento coeso (glass leve, cor por etapa, stagger, `prefers-reduced-motion`) mantendo Índigo/slate/Inter. Ajustes: `content` do Tailwind inclui `src/lib`; `formatCurrency`/`formatDueDate`. A persistência real (migration `deals` + RLS + Server Actions) fica marcada com `TODO(deals)`. Verificado com `typecheck`/`lint`/`build` + **teste E2E** (12/12, incluindo os totais atualizando no criar e no drag).
 
 ---
 
