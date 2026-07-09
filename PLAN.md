@@ -97,10 +97,12 @@
 
 - [ ] Migration `activities` (type: call|email|meeting|note, description, author_id, lead_id, created_at) + RLS
 - [ ] Server Action para registrar atividade
-- [ ] Timeline na página de detalhe do lead (ordem cronológica, ícone por tipo)
+- [x] Timeline na página de detalhe do lead (ordem cronológica, ícone por tipo) — **UI feita na aula 2.3** com dados mock (`ActivityTimeline`)
 - [ ] Formulário rápido de nova atividade
 
 **Aceite:** registrar diferentes tipos de atividade e vê-las na timeline do lead correto.
+
+> **Parcial (adiantado na aula 2.3 — Leads UI):** a **timeline de atividades** já existe na página de detalhe do lead (`/leads/[id]`) — componente `ActivityTimeline` com ordem cronológica e **ícone + cor por tipo** (ligação/e-mail/reunião/nota), autor e data, a partir de dados mock (`placeholderActivities`/`getActivitiesForLead` em `lib/placeholder-data.ts`). **Falta** (pós-Supabase): migration `activities` + RLS, **Server Action** para registrar atividade, e o **formulário rápido** de nova atividade — a timeline hoje é só leitura.
 
 ---
 
