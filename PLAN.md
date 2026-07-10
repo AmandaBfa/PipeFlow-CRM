@@ -97,10 +97,12 @@
 
 - [ ] Migration `activities` (type: call|email|meeting|note, description, author_id, lead_id, created_at) + RLS
 - [ ] Server Action para registrar atividade
-- [ ] Timeline na página de detalhe do lead (ordem cronológica, ícone por tipo)
+- [x] Timeline na página de detalhe do lead (ordem cronológica, ícone por tipo) — **UI feita na aula 2.3** com dados mock (`ActivityTimeline`)
 - [ ] Formulário rápido de nova atividade
 
 **Aceite:** registrar diferentes tipos de atividade e vê-las na timeline do lead correto.
+
+> **Parcial (adiantado na aula 2.3 — Leads UI):** a **timeline de atividades** já existe na página de detalhe do lead (`/leads/[id]`) — componente `ActivityTimeline` com ordem cronológica e **ícone + cor por tipo** (ligação/e-mail/reunião/nota), autor e data, a partir de dados mock (`placeholderActivities`/`getActivitiesForLead` em `lib/placeholder-data.ts`). **Falta** (pós-Supabase): migration `activities` + RLS, **Server Action** para registrar atividade, e o **formulário rápido** de nova atividade — a timeline hoje é só leitura.
 
 ---
 
@@ -150,12 +152,12 @@
 
 **Objetivo:** página pública de apresentação.
 
-- [ ] Route group `(marketing)` — `/` e `/pricing`
-- [ ] Seções: Hero, Funcionalidades, Planos e preços, CTA
-- [ ] CTAs levam para signup / checkout
-- [ ] Responsiva e alinhada à identidade visual
+- [x] Route group `(marketing)` — `/` e `/pricing`
+- [x] Seções: Hero, Funcionalidades, Planos e preços, CTA
+- [x] CTAs levam para signup / checkout <!-- signup ligado; checkout do Pro fica p/ o Stripe (M8, TODO) -->
+- [x] Responsiva e alinhada à identidade visual
 
-**Aceite:** landing acessível deslogado; CTA leva ao cadastro.
+**Aceite:** landing acessível deslogado; CTA leva ao cadastro. ✅ (UI — aula 2.6)
 
 ---
 
