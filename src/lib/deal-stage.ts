@@ -30,6 +30,8 @@ interface DealStageConfig {
   accentClassName: string;
   // Ring quando a coluna é alvo de drop (isOver).
   ringClassName: string;
+  // Cor sólida (hex) para gráficos (Recharts não usa classes Tailwind).
+  chartColor: string;
 }
 
 export const DEAL_STAGE_CONFIG: Record<DealStage, DealStageConfig> = {
@@ -40,6 +42,7 @@ export const DEAL_STAGE_CONFIG: Record<DealStage, DealStageConfig> = {
     dotClassName: "bg-slate-400",
     accentClassName: "border-l-slate-400 hover:shadow-slate-500/10",
     ringClassName: "ring-slate-400/40",
+    chartColor: "#94a3b8",
   },
   contacted: {
     label: "Contato feito",
@@ -48,6 +51,7 @@ export const DEAL_STAGE_CONFIG: Record<DealStage, DealStageConfig> = {
     dotClassName: "bg-indigo-500",
     accentClassName: "border-l-indigo-500 hover:shadow-indigo-500/15",
     ringClassName: "ring-indigo-500/40",
+    chartColor: "#6366f1",
   },
   proposal_sent: {
     label: "Proposta enviada",
@@ -56,6 +60,7 @@ export const DEAL_STAGE_CONFIG: Record<DealStage, DealStageConfig> = {
     dotClassName: "bg-amber-500",
     accentClassName: "border-l-amber-500 hover:shadow-amber-500/15",
     ringClassName: "ring-amber-500/40",
+    chartColor: "#f59e0b",
   },
   negotiation: {
     label: "Em negociação",
@@ -64,6 +69,7 @@ export const DEAL_STAGE_CONFIG: Record<DealStage, DealStageConfig> = {
     dotClassName: "bg-orange-500",
     accentClassName: "border-l-orange-500 hover:shadow-orange-500/15",
     ringClassName: "ring-orange-500/40",
+    chartColor: "#f97316",
   },
   won: {
     label: "Ganho",
@@ -72,6 +78,7 @@ export const DEAL_STAGE_CONFIG: Record<DealStage, DealStageConfig> = {
     dotClassName: "bg-emerald-500",
     accentClassName: "border-l-emerald-500 hover:shadow-emerald-500/15",
     ringClassName: "ring-emerald-500/40",
+    chartColor: "#10b981",
   },
   lost: {
     label: "Perdido",
@@ -80,6 +87,7 @@ export const DEAL_STAGE_CONFIG: Record<DealStage, DealStageConfig> = {
     dotClassName: "bg-red-500",
     accentClassName: "border-l-red-500 hover:shadow-red-500/10",
     ringClassName: "ring-red-500/40",
+    chartColor: "#ef4444",
   },
 };
 
