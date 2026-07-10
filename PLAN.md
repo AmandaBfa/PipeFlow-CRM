@@ -152,12 +152,12 @@
 
 **Objetivo:** página pública de apresentação.
 
-- [ ] Route group `(marketing)` — `/` e `/pricing`
-- [ ] Seções: Hero, Funcionalidades, Planos e preços, CTA
-- [ ] CTAs levam para signup / checkout
-- [ ] Responsiva e alinhada à identidade visual
+- [x] Route group `(marketing)` — `/` e `/pricing`
+- [x] Seções: Hero, Funcionalidades, Planos e preços, CTA
+- [x] CTAs levam para signup / checkout <!-- signup ligado; checkout do Pro fica p/ o Stripe (M8, TODO) -->
+- [x] Responsiva e alinhada à identidade visual
 
-**Aceite:** landing acessível deslogado; CTA leva ao cadastro.
+**Aceite:** landing acessível deslogado; CTA leva ao cadastro. ✅ (UI — aula 2.6)
 
 ---
 
