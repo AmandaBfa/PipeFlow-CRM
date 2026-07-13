@@ -16,7 +16,7 @@
 - [x] Inicializar shadcn/ui + componentes base (`button`, `input`, `card`, `dialog`, `dropdown-menu`, `table`, `badge`, `avatar`, `sonner`, `label`)
 - [x] Configurar tema em `globals.css` (tokens Índigo/slate, dark mode) e fonte Inter via `next/font`
 - [x] Criar `.env.local` + `.env.example` com as variáveis do CLAUDE.md
-- [~] `supabase/` inicializado (config + migration inicial vazia + seed) — **falta criar o projeto na nuvem** (requer login Supabase)
+- [x] `supabase/` inicializado (config + migration inicial vazia + seed) + **projeto criado na nuvem** e chaves no `.env.local` (verificadas com `pnpm supabase:check`)
 - [x] `git init` + commits + branch `feat/project-setup` + **merge na `main`** + **push para o GitHub** (`AmandaBfa/PipeFlow-CRM`)
 
 **Aceite:** ✅ `pnpm dev` sobe sem erros; `pnpm lint` e `pnpm typecheck` passam; `pnpm build` OK; página inicial renderiza com a fonte Inter e cores do tema.
@@ -27,8 +27,8 @@
 
 **Objetivo:** usuário cria conta, faz login e vê o layout do dashboard vazio.
 
-- [ ] Clients Supabase: `lib/supabase/{server,client,middleware}.ts` (padrão `@supabase/ssr`)
-- [ ] `middleware.ts` fazendo refresh de sessão
+- [x] Clients Supabase: `lib/supabase/{server,client,middleware}.ts` (padrão `@supabase/ssr`)
+- [x] `middleware.ts` fazendo refresh de sessão
 - [~] Route groups `(auth)` — telas de **login, cadastro e recuperação de senha** prontas (UI + validação Zod + loading + erros); **callback é stub** e a autenticação real (Supabase) entra na próxima aula
 - [~] Route group `(dashboard)` — criado com o layout do shell; **falta a proteção** (redirect de não autenticado para `/login`)
 - [x] Layout do dashboard: sidebar (com workspace switcher) + barra superior + área de conteúdo
@@ -39,6 +39,8 @@
 > **Aula 2.1 — Design System & App Shell (concluída):** shell responsivo com sidebar fixa (desktop) + drawer hambúrguer (mobile via `Sheet`), barra superior com título da seção e alternador de tema, **dark mode como padrão** (next-themes), seletor de workspace com dados fake sincronizado entre desktop/mobile via `WorkspaceProvider`, e páginas placeholder (`/dashboard`, `/leads`, `/pipeline`, `/settings`) com empty states. Base reutilizável adicionada: `sheet`, `separator`, `skeleton`, `tooltip`, `ThemeToggle`, `PageHeader`, `EmptyState`. Verificado com `typecheck`/`lint`/`build` + smoke test. **Falta só a autenticação** para fechar o Milestone 1.
 
 > **Aula 2.2 — Auth & Onboarding UI (concluída):** grupo de rotas `(auth)` com layout split-screen (painel de marca + formulário) e telas de **login**, **cadastro** e **recuperação de senha** — todas com **validação Zod por campo**, **loading** nos botões (`useFormStatus`), mensagens de erro e **botões sociais** (Google/GitHub, só UI). Fluxo de **onboarding** em passos (grupo `(onboarding)`): boas-vindas → **nomear o workspace** → convite (opcional) → `/dashboard`. Navegação **fake** por ora — login → `/dashboard`, cadastro → `/onboarding`, sem checar credenciais; a autenticação real do Supabase apenas troca as Server Actions em `lib/actions/auth.ts` (marcadas com `TODO(auth)`). Base adicionada: shadcn `checkbox` e componentes `auth/*`. Verificado com `typecheck`/`lint`/`build` + **teste E2E** (Playwright/Edge) dos 4 fluxos, cobrindo validação, loading, erros e redirects.
+
+> **Aula 3.1 — Setup Supabase & Chaves (concluída):** encanamento do Supabase pronto — **projeto criado na nuvem** e chaves no `.env.local` (gitignored). Clients `@supabase/ssr`: `client.ts` (browser, singleton preguiçoso) e `server.ts` (servidor, `await cookies()`, async); `lib/supabase/middleware.ts` + `src/middleware.ts` fazendo **refresh de sessão** a cada request (com **degradação graciosa**: no-op sem chaves). Leitura das chaves validada com **Zod** (`lib/env.ts`) e placeholder de `database.types.ts` (regerar no M2). Verificador `pnpm supabase:check` confere as 3 chaves + conectividade **sem imprimir valores**. Verificado com `supabase:check` (chaves ✓ + 200) + `typecheck`/`lint`/`build` (middleware compilado) + smoke das rotas. **Falta** para fechar o M1: auth real (login/signup/logout) e proteção de rota — próxima aula.
 
 ---
 
