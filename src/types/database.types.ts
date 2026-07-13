@@ -1,21 +1,5 @@
-// Tipos do banco gerados pelo Supabase CLI.
-// Placeholder até o schema existir (Milestone 2 — workspaces/leads/deals + RLS).
-// Regerar depois com:
-//   supabase gen types typescript --linked > src/types/database.types.ts
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
-
-export type Database = {
-  public: {
-    Tables: { [_ in never]: never };
-    Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
-    Enums: { [_ in never]: never };
-    CompositeTypes: { [_ in never]: never };
-  };
-};
+// Re-export de compatibilidade.
+// A partir da aula 3.2 o arquivo canônico de tipos do banco é `supabase.ts`
+// (gerado com `supabase gen types typescript --linked > src/types/supabase.ts`).
+// Este shim mantém válidos imports antigos de `@/types/database.types`.
+export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "./supabase";
