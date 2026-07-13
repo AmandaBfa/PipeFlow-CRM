@@ -48,14 +48,16 @@
 
 **Objetivo:** fundação multi-tenant. Todo dado passa a pertencer a um workspace.
 
-- [ ] Migration: `workspaces`, `workspace_members` (`role`: admin|member)
-- [ ] Trigger/Server Action: ao criar usuário, criar workspace pessoal e vincular como `admin`
-- [ ] **Policies RLS** em `workspaces`/`workspace_members` (usuário só vê workspaces onde é membro)
-- [ ] Helper `getCurrentWorkspace()` (server) — resolve workspace ativo (cookie/preferência)
-- [ ] Workspace switcher funcional no topo da sidebar
-- [ ] Gerar `src/types/database.types.ts`
+- [x] Migration: `workspaces`, `workspace_members` (`role`: admin|member)
+- [x] Trigger `handle_new_user`: ao criar usuário, cria workspace pessoal e vincula como `admin`
+- [x] **Policies RLS** em `workspaces`/`workspace_members` (usuário só vê workspaces onde é membro), via funções `SECURITY DEFINER` `is_workspace_member`/`is_workspace_admin`
+- [ ] Helper `getCurrentWorkspace()` (server) — resolve workspace ativo (cookie/preferência) — **aula 3.3**
+- [ ] Workspace switcher funcional no topo da sidebar — **aula 3.3**
+- [x] Gerar tipos do banco — canônico em `src/types/supabase.ts` (`database.types.ts` re-exporta; clients apontam para `@/types/supabase`)
 
 **Aceite:** dois usuários distintos não enxergam os dados um do outro; troca de workspace altera o contexto. **Este milestone define o padrão de RLS reaproveitado em todas as tabelas seguintes.**
+
+> **Aula 3.2 — Migrations & Segurança RLS (concluída):** primeira leva de schema real no Supabase. **6 migrations** idempotentes em `supabase/migrations/` — `workspaces`, `workspace_members`, `leads`, `deals`, `activities`, `subscriptions` — com **RLS por `workspace_id` em todas**. O isolamento usa funções `SECURITY DEFINER` `is_workspace_member`/`is_workspace_admin` (evitam a **recursão de policy** e servem de gate de admin); trigger `handle_new_user` **provisiona workspace pessoal + admin no signup**; `subscriptions` é **somente-leitura** para o cliente (escrita só via `service_role`, para o webhook do Stripe no M8). Tipos do banco em `src/types/supabase.ts` (canônico, escrito à mão casando com as migrations; `database.types.ts` re-exporta). Extras: `supabase/apply_all.sql` (consolidado p/ colar no SQL Editor) e `supabase/verify_rls.sql` (checagem). **Schema aplicado no projeto da nuvem** via SQL Editor (6 tabelas confirmadas via REST); `typecheck`/`lint`/`build` OK; PR **#7** mergeado. Isso **adiantou** as migrations de M3/M4/M5 e o estado de billing do M8 — mas as **Server Actions reais** (leads/deals/activities) continuam `TODO`. Decisões: `leads.email` ficou `nullable` (o form exige via Zod); `plan` fica em `workspaces` (leitura rápida) **e** em `subscriptions` (fonte de verdade). **Falta** para fechar o M2: `getCurrentWorkspace()` e o **switcher funcional** (aula 3.3).
 
 ---
 
@@ -63,7 +65,7 @@
 
 **Objetivo:** CRUD completo de leads com busca e filtros.
 
-- [ ] Migration `leads` (name, email, phone, company, position, status, owner_id, workspace_id) + RLS por `workspace_id`
+- [x] Migration `leads` (name, email, phone, company, position, status, owner_id, workspace_id) + RLS por `workspace_id` — **aplicada na aula 3.2** (Server Actions ainda `TODO`)
 - [x] Schemas Zod em `lib/validations/lead.ts` (`leadSchema`) + enum de status em `lib/lead-status.ts` (`new`/`contacted`/`qualified`/`unqualified`/`converted`)
 - [~] Server Actions: create / update / delete lead — **fake em memória** (`LeadsProvider`) na aula 2.3; viram Server Actions do Supabase (marcado com `TODO(leads)`)
 - [~] Lista de leads (`table` shadcn) com busca (nome/e-mail/empresa) ✅ e filtros por status e responsável ✅ — **falta filtro por data**
@@ -80,7 +82,7 @@
 
 **Objetivo:** board de negócios com drag-and-drop persistido.
 
-- [ ] Migration `deals` (title, value, stage, lead_id, owner_id, due_date, workspace_id) + RLS
+- [x] Migration `deals` (title, value, stage, lead_id, owner_id, due_date, workspace_id) + RLS — **aplicada na aula 3.2** (Server Actions ainda `TODO`)
 - [x] Enum de etapas: `new_lead → contacted → proposal_sent → negotiation → won → lost` (`lib/deal-stage.ts`)
 - [x] Board com @dnd-kit: colunas por etapa, cards arrastáveis (`"use client"`)
 - [x] Card: título, valor (R$), lead vinculado, responsável, prazo
@@ -97,7 +99,7 @@
 
 **Objetivo:** histórico cronológico de interações por lead.
 
-- [ ] Migration `activities` (type: call|email|meeting|note, description, author_id, lead_id, created_at) + RLS
+- [x] Migration `activities` (type: call|email|meeting|note, description, author_id, lead_id, created_at) + RLS — **aplicada na aula 3.2** (Server Action ainda `TODO`)
 - [ ] Server Action para registrar atividade
 - [x] Timeline na página de detalhe do lead (ordem cronológica, ícone por tipo) — **UI feita na aula 2.3** com dados mock (`ActivityTimeline`)
 - [ ] Formulário rápido de nova atividade
@@ -140,7 +142,7 @@
 **Objetivo:** planos Free/Pro com billing automatizado.
 
 - [ ] Produtos/preços no Stripe (Pro R$49/mês); `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
-- [ ] Colunas de plano em `workspaces` (plan, stripe_customer_id, stripe_subscription_id, status)
+- [~] Estado de billing no banco: coluna `plan` em `workspaces` + tabela `subscriptions` (`stripe_customer_id`, `stripe_subscription_id`, `stripe_price_id`, `plan`, `status`, `current_period_end`, `cancel_at_period_end`) — criadas e com **RLS** na aula 3.2 (escrita restrita à `service_role`). **Falta** o webhook popular/sincronizar
 - [ ] Route Handler `api/stripe/checkout` → Stripe Checkout
 - [ ] Route Handler `api/stripe/webhook` → ativa/desativa plano (verificar assinatura do webhook)
 - [ ] Customer Portal para gerenciar assinatura
@@ -193,4 +195,4 @@
 - **Server-first:** leitura em Server Components, escrita em Server Actions; `"use client"` só onde há interação (Kanban, formulários).
 - **Validar com Zod** todo input antes de tocar o banco.
 - **Testar cada milestone** (fluxo real no navegador) antes de iniciar o próximo.
-- Regerar `database.types.ts` após cada migration.
+- Regerar os tipos do banco (`src/types/supabase.ts`, canônico) após cada migration — via `supabase gen types typescript` quando a CLI estiver instalada.
