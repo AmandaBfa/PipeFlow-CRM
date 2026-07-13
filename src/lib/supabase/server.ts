@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
 import { getSupabaseClientEnv } from "@/lib/env";
-import type { Database } from "@/types/database.types";
+import type { Database } from "@/types/supabase";
 
 // Client do Supabase para o servidor (Server Components e Server Actions).
 // Lê e escreve a sessão nos cookies da request. É `async` para acompanhar a
