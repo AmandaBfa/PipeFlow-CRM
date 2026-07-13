@@ -1,10 +1,10 @@
 -- =====================================================================
--- PipeFlow CRM — SCRIPT CONSOLIDADO (colar inteiro no SQL Editor e Run)
+-- PipeFlow CRM - SCRIPT CONSOLIDADO (colar inteiro no SQL Editor e Run)
 -- =====================================================================
--- Concatenação, na ordem correta, das 5 migrations em supabase/migrations/.
--- ARQUIVO GERADO — não edite aqui. Fonte de verdade: os arquivos individuais
--- em supabase/migrations/ (usados pelo `supabase db push`). Este consolidado é
--- só uma conveniência para aplicar tudo de uma vez no Studio.
+-- Concatenacao, na ordem correta, das migrations em supabase/migrations/.
+-- ARQUIVO GERADO - nao edite aqui. Fonte de verdade: os arquivos individuais
+-- em supabase/migrations/ (usados pelo `supabase db push`). Este consolidado e
+-- so uma conveniencia para aplicar tudo de uma vez no Studio.
 -- Idempotente: pode reexecutar sem erro.
 -- =====================================================================
 
@@ -12,25 +12,25 @@
 -- >>> 20260713090000_workspaces_and_members.sql
 -- #####################################################################
 -- =====================================================================
--- Milestone 2 â€” Multi-empresa (Workspaces) & fundaÃ§Ã£o de RLS
+-- Milestone 2 — Multi-empresa (Workspaces) & fundação de RLS
 -- =====================================================================
--- Cria as tabelas de tenancy (workspaces, workspace_members), as funÃ§Ãµes
+-- Cria as tabelas de tenancy (workspaces, workspace_members), as funções
 -- auxiliares de RLS e o trigger que provisiona um workspace pessoal no signup.
 --
--- Este arquivo Ã© IDEMPOTENTE: pode ser colado inteiro no SQL Editor do
+-- Este arquivo é IDEMPOTENTE: pode ser colado inteiro no SQL Editor do
 -- Supabase Studio e reexecutado sem erro (usa IF NOT EXISTS / OR REPLACE /
 -- DROP ... IF EXISTS).
 --
--- IMPORTANTE (seguranÃ§a): as policies filtram por associaÃ§Ã£o ao workspace via
--- as funÃ§Ãµes `is_workspace_member` / `is_workspace_admin`. Elas sÃ£o
--- SECURITY DEFINER de propÃ³sito â€” rodam com os privilÃ©gios do dono e, por isso,
+-- IMPORTANTE (segurança): as policies filtram por associação ao workspace via
+-- as funções `is_workspace_member` / `is_workspace_admin`. Elas são
+-- SECURITY DEFINER de propósito — rodam com os privilégios do dono e, por isso,
 -- IGNORAM o RLS ao consultar `workspace_members` por dentro. Sem isso, uma
--- policy em `workspace_members` que consulta a prÃ³pria `workspace_members`
--- entraria em RECURSÃƒO INFINITA. NÃ£o troque para SECURITY INVOKER.
+-- policy em `workspace_members` que consulta a própria `workspace_members`
+-- entraria em RECURSÃO INFINITA. Não troque para SECURITY INVOKER.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- Helper: mantÃ©m `updated_at` sempre coerente em UPDATEs.
+-- Helper: mantém `updated_at` sempre coerente em UPDATEs.
 -- ---------------------------------------------------------------------
 create or replace function public.set_updated_at()
 returns trigger
@@ -43,13 +43,13 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------
--- Tabela: workspaces (a empresa/time â€” o tenant)
+-- Tabela: workspaces (a empresa/time — o tenant)
 -- ---------------------------------------------------------------------
 create table if not exists public.workspaces (
   id         uuid primary key default gen_random_uuid(),
   name       text not null check (char_length(trim(name)) between 1 and 80),
-  -- Plano "efetivo" (desnormalizado p/ leitura rÃ¡pida em checagens de limite).
-  -- A fonte de verdade do billing Ã© a tabela `subscriptions`; o webhook do
+  -- Plano "efetivo" (desnormalizado p/ leitura rápida em checagens de limite).
+  -- A fonte de verdade do billing é a tabela `subscriptions`; o webhook do
   -- Stripe (M8) sincroniza este campo.
   plan       text not null default 'free' check (plan in ('free', 'pro')),
   owner_id   uuid not null references auth.users (id) on delete cascade,
@@ -65,7 +65,7 @@ create trigger workspaces_set_updated_at
   for each row execute function public.set_updated_at();
 
 -- ---------------------------------------------------------------------
--- Tabela: workspace_members (junÃ§Ã£o user <-> workspace, com papel)
+-- Tabela: workspace_members (junção user <-> workspace, com papel)
 -- ---------------------------------------------------------------------
 create table if not exists public.workspace_members (
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
@@ -78,7 +78,7 @@ create table if not exists public.workspace_members (
 create index if not exists workspace_members_user_id_idx on public.workspace_members (user_id);
 
 -- ---------------------------------------------------------------------
--- FunÃ§Ãµes auxiliares de RLS (SECURITY DEFINER â€” ver nota no topo).
+-- Funções auxiliares de RLS (SECURITY DEFINER — ver nota no topo).
 -- ---------------------------------------------------------------------
 create or replace function public.is_workspace_member(ws uuid)
 returns boolean
@@ -122,8 +122,8 @@ create policy "workspaces_select_members"
   to authenticated
   using (public.is_workspace_member(id));
 
--- SÃ³ Ã© possÃ­vel criar um workspace do qual vocÃª Ã© o dono (o trigger de signup
--- tambÃ©m cria, mas roda como definer e ignora esta checagem).
+-- Só é possível criar um workspace do qual você é o dono (o trigger de signup
+-- também cria, mas roda como definer e ignora esta checagem).
 drop policy if exists "workspaces_insert_owner" on public.workspaces;
 create policy "workspaces_insert_owner"
   on public.workspaces for insert
@@ -148,7 +148,7 @@ create policy "workspaces_delete_admin"
 -- ---------------------------------------------------------------------
 alter table public.workspace_members enable row level security;
 
--- Membros enxergam a lista de membros do prÃ³prio workspace.
+-- Membros enxergam a lista de membros do próprio workspace.
 drop policy if exists "workspace_members_select_members" on public.workspace_members;
 create policy "workspace_members_select_members"
   on public.workspace_members for select
@@ -177,7 +177,7 @@ create policy "workspace_members_delete_admin"
 
 -- ---------------------------------------------------------------------
 -- Trigger de provisionamento: no signup, cria o workspace pessoal e
--- vincula o novo usuÃ¡rio como admin. Roda como DEFINER para poder inserir
+-- vincula o novo usuário como admin. Roda como DEFINER para poder inserir
 -- ignorando o RLS.
 -- ---------------------------------------------------------------------
 create or replace function public.handle_new_user()
@@ -190,7 +190,7 @@ declare
   new_workspace_id uuid;
   ws_name          text;
 begin
-  -- Nome do workspace: metadata do signup -> nome do usuÃ¡rio -> antes do @ -> fallback.
+  -- Nome do workspace: metadata do signup -> nome do usuário -> antes do @ -> fallback.
   ws_name := coalesce(
     nullif(trim(new.raw_user_meta_data ->> 'workspace_name'), ''),
     nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''),
@@ -215,7 +215,7 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- ---------------------------------------------------------------------
--- Grants (defesa em profundidade â€” RLS continua sendo a fronteira real).
+-- Grants (defesa em profundidade — RLS continua sendo a fronteira real).
 -- ---------------------------------------------------------------------
 grant select, insert, update, delete on public.workspaces        to authenticated;
 grant select, insert, update, delete on public.workspace_members to authenticated;
@@ -225,7 +225,7 @@ grant select, insert, update, delete on public.workspace_members to authenticate
 -- >>> 20260713090100_leads.sql
 -- #####################################################################
 -- =====================================================================
--- Milestone 3 â€” Leads & Contatos
+-- Milestone 3 — Leads & Contatos
 -- =====================================================================
 -- Tabela `leads` + RLS por workspace. Todos os membros do workspace podem
 -- ler/escrever os leads do workspace (CRM de time simples).
@@ -247,7 +247,7 @@ create table if not exists public.leads (
   position     text,
   status       text not null default 'new'
                  check (status in ('new', 'contacted', 'qualified', 'unqualified', 'converted')),
-  -- ResponsÃ¡vel. Se o usuÃ¡rio sair, o lead permanece (owner vira NULL).
+  -- Responsável. Se o usuário sair, o lead permanece (owner vira NULL).
   owner_id     uuid references auth.users (id) on delete set null,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
@@ -299,22 +299,22 @@ grant select, insert, update, delete on public.leads to authenticated;
 -- >>> 20260713090200_deals.sql
 -- #####################################################################
 -- =====================================================================
--- Milestone 4 â€” Pipeline Kanban de Vendas
+-- Milestone 4 — Pipeline Kanban de Vendas
 -- =====================================================================
--- Tabela `deals` (negÃ³cios) + RLS por workspace.
+-- Tabela `deals` (negócios) + RLS por workspace.
 --
 -- Depende de: 20260713090000_workspaces_and_members.sql e
 --             20260713090100_leads.sql.
 -- Idempotente: seguro reexecutar no SQL Editor.
 --
 -- Os valores de `stage` espelham src/lib/deal-stage.ts (DEAL_STAGES);
--- `won`/`lost` sÃ£o etapas terminais.
+-- `won`/`lost` são etapas terminais.
 -- =====================================================================
 
 create table if not exists public.deals (
   id           uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  -- Lead vinculado. Se o lead for removido, o negÃ³cio permanece (lead vira NULL).
+  -- Lead vinculado. Se o lead for removido, o negócio permanece (lead vira NULL).
   lead_id      uuid references public.leads (id) on delete set null,
   title        text not null check (char_length(trim(title)) between 1 and 140),
   value        numeric(14, 2) not null default 0 check (value >= 0),
@@ -373,16 +373,16 @@ grant select, insert, update, delete on public.deals to authenticated;
 -- >>> 20260713090300_activities.sql
 -- #####################################################################
 -- =====================================================================
--- Milestone 5 â€” Registro de Atividades (Timeline)
+-- Milestone 5 — Registro de Atividades (Timeline)
 -- =====================================================================
--- Tabela `activities` (histÃ³rico por lead) + RLS por workspace.
+-- Tabela `activities` (histórico por lead) + RLS por workspace.
 --
 -- Depende de: 20260713090000_workspaces_and_members.sql e
 --             20260713090100_leads.sql.
 -- Idempotente: seguro reexecutar no SQL Editor.
 --
 -- Os valores de `type` espelham ActivityType em src/lib/placeholder-data.ts.
--- NÃ£o tem `updated_at`: atividades sÃ£o registros imutÃ¡veis do histÃ³rico.
+-- Não tem `updated_at`: atividades são registros imutáveis do histórico.
 -- =====================================================================
 
 create table if not exists public.activities (
@@ -392,7 +392,7 @@ create table if not exists public.activities (
   lead_id      uuid not null references public.leads (id) on delete cascade,
   type         text not null check (type in ('call', 'email', 'meeting', 'note')),
   description  text not null check (char_length(trim(description)) between 1 and 2000),
-  -- Autor do registro. Preservamos a atividade se o usuÃ¡rio for removido.
+  -- Autor do registro. Preservamos a atividade se o usuário for removido.
   author_id    uuid references auth.users (id) on delete set null,
   created_at   timestamptz not null default now()
 );
@@ -437,17 +437,17 @@ grant select, insert, update, delete on public.activities to authenticated;
 -- >>> 20260713090400_subscriptions.sql
 -- #####################################################################
 -- =====================================================================
--- Milestone 8 â€” MonetizaÃ§Ã£o (Stripe): estado de assinatura por workspace
+-- Milestone 8 — Monetização (Stripe): estado de assinatura por workspace
 -- =====================================================================
--- Tabela `subscriptions` (1:1 com workspace) â€” fonte de verdade do billing.
+-- Tabela `subscriptions` (1:1 com workspace) — fonte de verdade do billing.
 --
 -- Depende de: 20260713090000_workspaces_and_members.sql.
 -- Idempotente: seguro reexecutar no SQL Editor.
 --
--- SEGURANÃ‡A: membros sÃ³ PODEM LER a assinatura do prÃ³prio workspace. Toda
+-- SEGURANÇA: membros só PODEM LER a assinatura do próprio workspace. Toda
 -- ESCRITA vem do webhook do Stripe usando a SERVICE_ROLE_KEY, que ignora o RLS.
--- Por isso NÃƒO hÃ¡ policy de insert/update/delete para `authenticated` â€” o
--- default (deny) jÃ¡ bloqueia o cliente de forjar o plano.
+-- Por isso NÃO há policy de insert/update/delete para `authenticated` — o
+-- default (deny) já bloqueia o cliente de forjar o plano.
 -- =====================================================================
 
 create table if not exists public.subscriptions (
@@ -490,6 +490,67 @@ create policy "subscriptions_select_members"
   to authenticated
   using (public.is_workspace_member(workspace_id));
 
--- Sem policies de escrita de propÃ³sito: apenas a service_role (webhook) escreve.
+-- Sem policies de escrita de propósito: apenas a service_role (webhook) escreve.
 grant select on public.subscriptions to authenticated;
+
+
+-- #####################################################################
+-- >>> 20260713100000_rls_hardening.sql
+-- #####################################################################
+-- =====================================================================
+-- Hardening de RLS/funções — boas práticas (skill supabase-postgres-best-practices)
+-- =====================================================================
+-- 1. Envolve auth.uid() em (select auth.uid()): o Postgres avalia uma vez por
+--    query (initPlan) em vez de por linha — ganho de performance no RLS.
+-- 2. Fixa search_path na set_updated_at (advisor: function_search_path_mutable).
+-- 3. search_path = '' nas funções definer (tudo já é schema-qualified).
+--
+-- Depende de: 20260713090000_workspaces_and_members.sql (funções já existem).
+-- Idempotente: `create or replace` — seguro reexecutar no SQL Editor.
+-- Não altera as assinaturas, então as policies existentes continuam válidas.
+-- =====================================================================
+
+-- Trigger de updated_at: fixa o search_path (now() vem do pg_catalog, sempre disponível).
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+-- Membresia: (select auth.uid()) + search_path vazio (nomes já qualificados).
+create or replace function public.is_workspace_member(ws uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.workspace_members
+    where workspace_id = ws
+      and user_id = (select auth.uid())
+  );
+$$;
+
+create or replace function public.is_workspace_admin(ws uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.workspace_members
+    where workspace_id = ws
+      and user_id = (select auth.uid())
+      and role = 'admin'
+  );
+$$;
 

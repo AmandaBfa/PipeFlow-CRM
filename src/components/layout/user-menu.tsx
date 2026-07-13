@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { LogOut, Settings, User } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,25 +11,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { placeholderUser } from "@/lib/placeholder-data";
+import { signOutAction } from "@/lib/actions/auth";
+import { useSessionUser } from "./workspace-provider";
 
-// Menu do usuário (dados fake). "Sair" leva ao login; o logout real (encerrar
-// a sessão do Supabase) entra na aula de wiring.
+// Menu do usuário com identidade real (do Supabase Auth). "Sair" chama a
+// Server Action de logout (encerra a sessão) via <form>.
 export function UserMenu() {
+  const user = useSessionUser();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg p-2 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-            {placeholderUser.initials}
+            {user.initials}
           </AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium">
-            {placeholderUser.name}
-          </span>
+          <span className="truncate text-sm font-medium">{user.name}</span>
           <span className="truncate text-xs text-muted-foreground">
-            {placeholderUser.email}
+            {user.email}
           </span>
         </div>
       </DropdownMenuTrigger>
@@ -47,15 +47,17 @@ export function UserMenu() {
           Configurações
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          asChild
-          className="gap-2 text-destructive focus:text-destructive"
-        >
-          <Link href="/login">
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Link>
-        </DropdownMenuItem>
+        <form action={signOutAction}>
+          <DropdownMenuItem
+            asChild
+            className="gap-2 text-destructive focus:text-destructive"
+          >
+            <button type="submit" className="w-full">
+              <LogOut className="h-4 w-4" />
+              Sair
+            </button>
+          </DropdownMenuItem>
+        </form>
       </DropdownMenuContent>
     </DropdownMenu>
   );

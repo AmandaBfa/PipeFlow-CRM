@@ -15,11 +15,14 @@ import { SubmitButton } from "./submit-button";
 
 const initialState: AuthFormState = {};
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const [state, formAction] = useFormState(signInAction, initialState);
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
+      {/* Destino pós-login preservado pelo middleware (?next=). */}
+      {next ? <input type="hidden" name="next" value={next} /> : null}
+
       {state.message && <FormMessage>{state.message}</FormMessage>}
 
       <div className="space-y-2">
