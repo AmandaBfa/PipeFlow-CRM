@@ -7,7 +7,11 @@ export const metadata: Metadata = {
   title: "Entrar",
 };
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: { next?: string };
+}) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -19,7 +23,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <LoginForm />
+      <LoginForm next={searchParams.next} />
 
       <p className="text-center text-sm text-muted-foreground">
         Não tem uma conta?{" "}

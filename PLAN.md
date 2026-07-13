@@ -27,12 +27,12 @@
 
 **Objetivo:** usuário cria conta, faz login e vê o layout do dashboard vazio.
 
-- [x] Clients Supabase: `lib/supabase/{server,client,middleware}.ts` (padrão `@supabase/ssr`)
+- [x] Clients Supabase: `lib/supabase/{server,client}.ts` + `proxy.ts` (padrão `@supabase/ssr`)
 - [x] `middleware.ts` fazendo refresh de sessão
-- [~] Route groups `(auth)` — telas de **login, cadastro e recuperação de senha** prontas (UI + validação Zod + loading + erros); **callback é stub** e a autenticação real (Supabase) entra na próxima aula
-- [~] Route group `(dashboard)` — criado com o layout do shell; **falta a proteção** (redirect de não autenticado para `/login`)
+- [x] Route groups `(auth)` — login, cadastro, recuperação e **callback real** (`exchangeCodeForSession`); autenticação do Supabase nas Server Actions (aula 3.3)
+- [x] Route group `(dashboard)` — **protegido**: middleware (`proxy.ts`) + `getUser()` no layout redirecionam o deslogado para `/login?next=`
 - [x] Layout do dashboard: sidebar (com workspace switcher) + barra superior + área de conteúdo
-- [~] Logout — item "Sair" leva ao `/login` (placeholder; logout real com Supabase na próxima aula)
+- [x] Logout — "Sair" chama a Server Action `signOutAction` (encerra a sessão do Supabase)
 
 **Aceite:** signup → recebe sessão → acessa `/dashboard`; deslogado é bloqueado nas rotas privadas.
 
@@ -41,6 +41,8 @@
 > **Aula 2.2 — Auth & Onboarding UI (concluída):** grupo de rotas `(auth)` com layout split-screen (painel de marca + formulário) e telas de **login**, **cadastro** e **recuperação de senha** — todas com **validação Zod por campo**, **loading** nos botões (`useFormStatus`), mensagens de erro e **botões sociais** (Google/GitHub, só UI). Fluxo de **onboarding** em passos (grupo `(onboarding)`): boas-vindas → **nomear o workspace** → convite (opcional) → `/dashboard`. Navegação **fake** por ora — login → `/dashboard`, cadastro → `/onboarding`, sem checar credenciais; a autenticação real do Supabase apenas troca as Server Actions em `lib/actions/auth.ts` (marcadas com `TODO(auth)`). Base adicionada: shadcn `checkbox` e componentes `auth/*`. Verificado com `typecheck`/`lint`/`build` + **teste E2E** (Playwright/Edge) dos 4 fluxos, cobrindo validação, loading, erros e redirects.
 
 > **Aula 3.1 — Setup Supabase & Chaves (concluída):** encanamento do Supabase pronto — **projeto criado na nuvem** e chaves no `.env.local` (gitignored). Clients `@supabase/ssr`: `client.ts` (browser, singleton preguiçoso) e `server.ts` (servidor, `await cookies()`, async); `lib/supabase/middleware.ts` + `src/middleware.ts` fazendo **refresh de sessão** a cada request (com **degradação graciosa**: no-op sem chaves). Leitura das chaves validada com **Zod** (`lib/env.ts`) e placeholder de `database.types.ts` (regerar no M2). Verificador `pnpm supabase:check` confere as 3 chaves + conectividade **sem imprimir valores**. Verificado com `supabase:check` (chaves ✓ + 200) + `typecheck`/`lint`/`build` (middleware compilado) + smoke das rotas. **Falta** para fechar o M1: auth real (login/signup/logout) e proteção de rota — próxima aula.
+
+> **Aula 3.3 — Auth Real & Proteção de Rotas (concluída):** fecha o **Milestone 1**. **Server Actions reais** (`lib/actions/auth.ts`) contra o Supabase Auth: login (`signInWithPassword`), cadastro (`signUp` com `full_name` alimentando o trigger), **logout** (`signOut`), reset e nova senha — erros do Supabase em **PT-BR**. **Callback** real (`exchangeCodeForSession`) + página **/reset-password**. **Proteção de rota em 2 camadas**: `lib/supabase/proxy.ts` (renova a sessão + redireciona deslogado→`/login?next=` e logado→`/dashboard`), importado pelo `middleware.ts`, mais `getUser()` no layout do dashboard (defesa em profundidade). **Onboarding conectado ao banco**: como o trigger já cria o workspace no signup, o passo de nome faz **UPDATE** (via RLS de admin), sem duplicar — fecha junto os pendentes do M2 (`getCurrentWorkspace()` + **switcher com dados reais**, workspace ativo em cookie, identidade real do usuário no menu). Segurança: guard anti **open-redirect** no `?next=` (`safeInternalPath`). Confirmação de e-mail **desligada** no projeto (dev). **Hardening** aplicado (`supabase/migrations/20260713100000_rls_hardening.sql`): `(select auth.uid())` nas funções de RLS (perf) + `search_path` fixo. Verificado ponta a ponta: `typecheck`/`lint`/`build`, proteção via curl, **e2e real** (signup→sessão→trigger cria workspace+admin→RLS isola) e inspeção do catálogo (**21 policies, 4 funções, 5 triggers**, sem órfãos). Skill `.claude/skills/supabase-postgres-best-practices/` criada. Migrations passaram a ser aplicadas **direto na infra via Management API** (token `SUPABASE_ACCESS_TOKEN`). **Falta** (M6 + persistência): Server Actions reais de leads/deals/activities e conectar o dashboard de métricas ao banco.
 
 ---
 
@@ -51,8 +53,8 @@
 - [x] Migration: `workspaces`, `workspace_members` (`role`: admin|member)
 - [x] Trigger `handle_new_user`: ao criar usuário, cria workspace pessoal e vincula como `admin`
 - [x] **Policies RLS** em `workspaces`/`workspace_members` (usuário só vê workspaces onde é membro), via funções `SECURITY DEFINER` `is_workspace_member`/`is_workspace_admin`
-- [ ] Helper `getCurrentWorkspace()` (server) — resolve workspace ativo (cookie/preferência) — **aula 3.3**
-- [ ] Workspace switcher funcional no topo da sidebar — **aula 3.3**
+- [x] Helper `getCurrentWorkspace()` (server) — resolve workspace ativo (cookie/preferência) — **aula 3.3**
+- [x] Workspace switcher funcional no topo da sidebar (dados reais + troca persistida em cookie) — **aula 3.3**
 - [x] Gerar tipos do banco — canônico em `src/types/supabase.ts` (`database.types.ts` re-exporta; clients apontam para `@/types/supabase`)
 
 **Aceite:** dois usuários distintos não enxergam os dados um do outro; troca de workspace altera o contexto. **Este milestone define o padrão de RLS reaproveitado em todas as tabelas seguintes.**

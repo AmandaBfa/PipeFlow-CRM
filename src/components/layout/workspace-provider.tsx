@@ -1,35 +1,63 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 
-import {
-  activeWorkspace,
-  placeholderWorkspaces,
-  type PlaceholderWorkspace,
-} from "@/lib/placeholder-data";
+import { setActiveWorkspaceAction } from "@/lib/actions/workspace";
+import type { SessionUser } from "@/lib/session";
+import type { WorkspaceSummary } from "@/lib/workspace";
 
 interface WorkspaceContextValue {
-  workspaces: PlaceholderWorkspace[];
-  selected: PlaceholderWorkspace;
-  setSelected: (workspace: PlaceholderWorkspace) => void;
+  workspaces: WorkspaceSummary[];
+  selected: WorkspaceSummary | null;
+  select: (workspace: WorkspaceSummary) => void;
+  user: SessionUser;
 }
 
 const WorkspaceContext = React.createContext<WorkspaceContextValue | null>(null);
 
-// Estado do workspace ativo compartilhado por todo o shell (sidebar desktop e
-// drawer mobile). Com dados fake na aula 2.1; no Milestone 2 é hidratado do
-// servidor (cookie/preferência) e passa a persistir via RLS.
+// Estado do shell autenticado (workspace ativo + usuário logado), hidratado do
+// servidor. A troca de workspace é otimista na UI e persiste no cookie via
+// Server Action; o `router.refresh()` recarrega os dados no novo contexto.
 export function WorkspaceProvider({
+  workspaces,
+  activeId,
+  user,
   children,
 }: {
+  workspaces: WorkspaceSummary[];
+  activeId: string | null;
+  user: SessionUser;
   children: React.ReactNode;
 }) {
-  const [selected, setSelected] =
-    React.useState<PlaceholderWorkspace>(activeWorkspace);
+  const router = useRouter();
+  const [, startTransition] = React.useTransition();
+  const [selectedId, setSelectedId] = React.useState<string | null>(
+    activeId ?? workspaces[0]?.id ?? null
+  );
+
+  // Ressincroniza se o servidor mudar a lista/ativo (ex.: após refresh).
+  React.useEffect(() => {
+    setSelectedId(activeId ?? workspaces[0]?.id ?? null);
+  }, [activeId, workspaces]);
+
+  const selected =
+    workspaces.find((ws) => ws.id === selectedId) ?? workspaces[0] ?? null;
+
+  const select = React.useCallback(
+    (workspace: WorkspaceSummary) => {
+      setSelectedId(workspace.id); // otimista
+      startTransition(async () => {
+        await setActiveWorkspaceAction(workspace.id);
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
   const value = React.useMemo<WorkspaceContextValue>(
-    () => ({ workspaces: placeholderWorkspaces, selected, setSelected }),
-    [selected]
+    () => ({ workspaces, selected, select, user }),
+    [workspaces, selected, select, user]
   );
 
   return (
@@ -45,4 +73,9 @@ export function useWorkspace() {
     throw new Error("useWorkspace deve ser usado dentro de <WorkspaceProvider>");
   }
   return context;
+}
+
+// Atalho para o usuário logado (consumido pelo user-menu).
+export function useSessionUser() {
+  return useWorkspace().user;
 }

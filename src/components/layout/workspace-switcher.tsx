@@ -12,11 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "./workspace-provider";
 
-// Seletor de workspace com dados fake (aula 2.1). O estado vem do
-// WorkspaceProvider, então desktop e mobile ficam sincronizados.
-// A troca é apenas visual; vira funcional (RLS) no Milestone 2.
+// Seletor de workspace com dados reais (Milestone 2). A troca persiste no
+// cookie e recarrega o contexto; desktop e mobile ficam sincronizados via
+// WorkspaceProvider.
 export function WorkspaceSwitcher() {
-  const { workspaces, selected, setSelected } = useWorkspace();
+  const { workspaces, selected, select } = useWorkspace();
+
+  // Sem workspace não deve ocorrer (o trigger cria um no signup), mas guardamos.
+  if (!selected) return null;
 
   return (
     <DropdownMenu>
@@ -45,7 +48,7 @@ export function WorkspaceSwitcher() {
         {workspaces.map((ws) => (
           <DropdownMenuItem
             key={ws.id}
-            onSelect={() => setSelected(ws)}
+            onSelect={() => select(ws)}
             className="gap-2"
           >
             <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[10px] font-semibold text-primary-foreground">
@@ -56,7 +59,8 @@ export function WorkspaceSwitcher() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 text-muted-foreground">
+        {/* Criar workspace entra numa aula futura (precisa de RPC definer). */}
+        <DropdownMenuItem disabled className="gap-2 text-muted-foreground">
           <Plus className="h-4 w-4" />
           Criar workspace
         </DropdownMenuItem>

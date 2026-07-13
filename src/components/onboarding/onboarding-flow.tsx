@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -24,20 +23,20 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { completeOnboardingAction } from "@/lib/actions/workspace";
 import { cn } from "@/lib/utils";
 
 const TOTAL_STEPS = 3;
 
-// Fluxo de primeiro acesso. Nesta aula é apenas UI: coleta o nome do primeiro
-// workspace e, ao concluir, redireciona ao dashboard. A criação real do
-// workspace (persistência + RLS) entra no Milestone 2.
-export function OnboardingFlow() {
-  const router = useRouter();
+// Fluxo de primeiro acesso. O workspace já existe (criado pelo trigger no
+// signup); aqui o usuário ajusta o nome, que é persistido via Server Action
+// (UPDATE) antes de ir ao dashboard. `defaultName` vem do servidor.
+export function OnboardingFlow({ defaultName = "" }: { defaultName?: string }) {
   const [step, setStep] = React.useState(0);
-  const [workspaceName, setWorkspaceName] = React.useState("");
+  const [workspaceName, setWorkspaceName] = React.useState(defaultName);
   const [nameError, setNameError] = React.useState<string | null>(null);
   const [inviteEmails, setInviteEmails] = React.useState("");
-  const [finishing, setFinishing] = React.useState(false);
+  const [isPending, startTransition] = React.useTransition();
 
   function handleWorkspaceNext() {
     if (workspaceName.trim().length < 2) {
@@ -49,12 +48,18 @@ export function OnboardingFlow() {
   }
 
   function handleFinish() {
-    setFinishing(true);
-    // TODO(workspace): criar o workspace de verdade (Milestone 2). Fake por ora.
-    toast.success(
-      `Workspace "${workspaceName.trim()}" criado! Bem-vindo ao PipeFlow.`
-    );
-    router.push("/dashboard");
+    const name = workspaceName.trim();
+    toast.success(`Workspace "${name}" pronto! Bem-vindo ao PipeFlow.`);
+    startTransition(async () => {
+      await completeOnboardingAction(name);
+    });
+  }
+
+  function handleSkip() {
+    // Pula sem renomear — mantém o nome que o trigger definiu.
+    startTransition(async () => {
+      await completeOnboardingAction("");
+    });
   }
 
   return (
@@ -87,7 +92,7 @@ export function OnboardingFlow() {
               <IconBadge>
                 <Building2 className="h-6 w-6" />
               </IconBadge>
-              <CardTitle className="text-2xl">Crie seu workspace</CardTitle>
+              <CardTitle className="text-2xl">Nomeie seu workspace</CardTitle>
               <CardDescription>
                 É o espaço da sua empresa ou time. Você pode mudar depois.
               </CardDescription>
@@ -150,16 +155,16 @@ export function OnboardingFlow() {
               <Button
                 variant="ghost"
                 onClick={() => setStep(1)}
-                disabled={finishing}
+                disabled={isPending}
               >
                 <ArrowLeft className="h-4 w-4" /> Voltar
               </Button>
               <Button
                 className="flex-1"
                 onClick={handleFinish}
-                disabled={finishing}
+                disabled={isPending}
               >
-                {finishing ? (
+                {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Preparando...
                   </>
@@ -177,8 +182,8 @@ export function OnboardingFlow() {
       {step === 2 && (
         <button
           type="button"
-          onClick={handleFinish}
-          disabled={finishing}
+          onClick={handleSkip}
+          disabled={isPending}
           className="mx-auto block text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
         >
           Pular por agora

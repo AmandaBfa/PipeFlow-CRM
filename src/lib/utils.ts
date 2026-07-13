@@ -14,3 +14,16 @@ export function getInitials(name: string) {
   const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
   return (first + last).toUpperCase();
 }
+
+/**
+ * Retorna `value` se for um caminho interno seguro — começa com "/" simples,
+ * sem "//" nem "\\" (que browsers tratam como protocol-relative → open redirect).
+ * Caso contrário, retorna `fallback`. Use para validar `?next=`.
+ */
+export function safeInternalPath(value: unknown, fallback: string): string {
+  return typeof value === "string" &&
+    /^\/(?!\/)/.test(value) &&
+    !value.includes("\\")
+    ? value
+    : fallback;
+}
