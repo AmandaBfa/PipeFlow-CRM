@@ -9,11 +9,12 @@ import { DeleteLeadDialog } from "./delete-lead-dialog";
 import { LeadFormDialog } from "./lead-form-dialog";
 import { LeadsTable } from "./leads-table";
 import { LeadsToolbar } from "./leads-toolbar";
-import { type Lead } from "./leads-provider";
+import { useLeads, type Lead } from "./leads-provider";
 
 // Composição da tela de leads: cabeçalho + toolbar + tabela + dialogs.
 // Mantém o estado de qual lead está sendo editado/excluído.
 export function LeadsView() {
+  const { members } = useLeads();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editingLead, setEditingLead] = React.useState<Lead | undefined>(
     undefined
@@ -49,16 +50,13 @@ export function LeadsView() {
 
       <LeadsToolbar />
 
-      <LeadsTable
-        onCreate={openCreate}
-        onEdit={openEdit}
-        onDelete={openDelete}
-      />
+      <LeadsTable onCreate={openCreate} onEdit={openEdit} onDelete={openDelete} />
 
       <LeadFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         lead={editingLead}
+        members={members}
       />
       <DeleteLeadDialog
         open={deleteOpen}

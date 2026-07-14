@@ -15,9 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DEAL_STAGE_CONFIG } from "@/lib/deal-stage";
 import { formatCurrency, formatDueDate } from "@/lib/format";
-import { getLead, getMember } from "@/lib/placeholder-data";
 import { cn } from "@/lib/utils";
-import type { Deal } from "./deals-provider";
+import { useDeals, type Deal } from "./deals-provider";
 
 interface DealCardProps {
   deal: Deal;
@@ -28,8 +27,9 @@ interface DealCardProps {
 }
 
 export function DealCard({ deal, onEdit, onDelete, overlay = false }: DealCardProps) {
+  const { getLeadOption, getMember } = useDeals();
   const config = DEAL_STAGE_CONFIG[deal.stage];
-  const lead = getLead(deal.leadId);
+  const lead = getLeadOption(deal.leadId);
   const owner = getMember(deal.ownerId);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =

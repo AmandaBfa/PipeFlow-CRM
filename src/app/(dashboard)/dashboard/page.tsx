@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
-import { getFunnelData, getKpis } from "@/lib/metrics";
+import { getDashboardMetrics } from "@/lib/metrics";
 
 export const metadata: Metadata = {
   title: "Dashboard · PipeFlow CRM",
@@ -21,9 +21,8 @@ export const metadata: Metadata = {
 // Primeira tela após o login. Métricas computadas no server a partir dos dados
 // fake (placeholderLeads/placeholderDeals) — viram queries do Supabase no
 // Milestone 6 real (ver TODO(dashboard) em lib/metrics.ts).
-export default function DashboardPage() {
-  const kpis = getKpis();
-  const funnel = getFunnelData();
+export default async function DashboardPage() {
+  const { kpis, funnel } = await getDashboardMetrics();
 
   return (
     <div className="space-y-6">

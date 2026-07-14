@@ -2,137 +2,60 @@
 
 import * as React from "react";
 
+import type { Lead } from "@/lib/data/leads";
 import type { LeadStatus } from "@/lib/lead-status";
-import { placeholderLeads, type PlaceholderLead } from "@/lib/placeholder-data";
-import type { LeadInput } from "@/lib/validations/lead";
+import type { WorkspaceMember } from "@/lib/workspace";
 
-export type Lead = PlaceholderLead;
+// Re-exporta o view-model para os componentes que importavam `Lead` daqui.
+export type { Lead } from "@/lib/data/leads";
 
 interface LeadsContextValue {
   leads: Lead[];
-  filteredLeads: Lead[];
+  members: WorkspaceMember[];
+  getMember: (id: string | null) => WorkspaceMember | undefined;
   search: string;
   statusFilter: LeadStatus | "all";
-  ownerFilter: string; // id do membro | "all"
+  ownerFilter: string;
   hasActiveFilters: boolean;
-  setSearch: (value: string) => void;
-  setStatusFilter: (value: LeadStatus | "all") => void;
-  setOwnerFilter: (value: string) => void;
-  clearFilters: () => void;
-  getLead: (id: string) => Lead | undefined;
-  addLead: (input: LeadInput) => Lead;
-  updateLead: (id: string, input: LeadInput) => void;
-  deleteLead: (id: string) => void;
 }
 
 const LeadsContext = React.createContext<LeadsContextValue | null>(null);
 
-// Estado dos leads em memória (aula 2.3). Semeado por placeholder-data e vive no
-// layout de /leads, então sobrevive à navegação lista↔detalhe. No Milestone 3
-// as mutações abaixo (add/update/delete) viram Server Actions do Supabase.
-export function LeadsProvider({ children }: { children: React.ReactNode }) {
-  const [leads, setLeads] = React.useState<Lead[]>(placeholderLeads);
-  const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<LeadStatus | "all">(
-    "all"
+// Container de dados dos leads — hidratado pelo servidor (já filtrados no banco).
+// Sem mutações aqui: os dialogs chamam as Server Actions diretamente; o toolbar
+// escreve os filtros na URL (que dispara o re-fetch server-side).
+export function LeadsProvider({
+  leads,
+  members,
+  search,
+  statusFilter,
+  ownerFilter,
+  children,
+}: {
+  leads: Lead[];
+  members: WorkspaceMember[];
+  search: string;
+  statusFilter: LeadStatus | "all";
+  ownerFilter: string;
+  children: React.ReactNode;
+}) {
+  const getMember = React.useCallback(
+    (id: string | null) => (id ? members.find((m) => m.id === id) : undefined),
+    [members]
   );
-  const [ownerFilter, setOwnerFilter] = React.useState<string>("all");
-
-  const filteredLeads = React.useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return leads.filter((lead) => {
-      const matchesSearch =
-        term === "" ||
-        lead.name.toLowerCase().includes(term) ||
-        lead.company.toLowerCase().includes(term) ||
-        lead.email.toLowerCase().includes(term);
-      const matchesStatus =
-        statusFilter === "all" || lead.status === statusFilter;
-      const matchesOwner = ownerFilter === "all" || lead.ownerId === ownerFilter;
-      return matchesSearch && matchesStatus && matchesOwner;
-    });
-  }, [leads, search, statusFilter, ownerFilter]);
-
-  const getLead = React.useCallback(
-    (id: string) => leads.find((lead) => lead.id === id),
-    [leads]
-  );
-
-  const addLead = React.useCallback((input: LeadInput) => {
-    // TODO(leads): criar via Server Action + Supabase (Milestone 3).
-    const lead: Lead = {
-      id: `lead_${crypto.randomUUID()}`,
-      name: input.name,
-      email: input.email,
-      phone: input.phone ?? "",
-      company: input.company ?? "",
-      position: input.position ?? "",
-      status: input.status,
-      ownerId: input.ownerId,
-      createdAt: new Date().toISOString(),
-    };
-    setLeads((prev) => [lead, ...prev]);
-    return lead;
-  }, []);
-
-  const updateLead = React.useCallback((id: string, input: LeadInput) => {
-    // TODO(leads): atualizar via Server Action + Supabase (Milestone 3).
-    setLeads((prev) =>
-      prev.map((lead) =>
-        lead.id === id
-          ? {
-              ...lead,
-              name: input.name,
-              email: input.email,
-              phone: input.phone ?? "",
-              company: input.company ?? "",
-              position: input.position ?? "",
-              status: input.status,
-              ownerId: input.ownerId,
-            }
-          : lead
-      )
-    );
-  }, []);
-
-  const deleteLead = React.useCallback((id: string) => {
-    // TODO(leads): excluir via Server Action + Supabase (Milestone 3).
-    setLeads((prev) => prev.filter((lead) => lead.id !== id));
-  }, []);
 
   const value = React.useMemo<LeadsContextValue>(
     () => ({
       leads,
-      filteredLeads,
+      members,
+      getMember,
       search,
       statusFilter,
       ownerFilter,
       hasActiveFilters:
         search.trim() !== "" || statusFilter !== "all" || ownerFilter !== "all",
-      setSearch,
-      setStatusFilter,
-      setOwnerFilter,
-      clearFilters: () => {
-        setSearch("");
-        setStatusFilter("all");
-        setOwnerFilter("all");
-      },
-      getLead,
-      addLead,
-      updateLead,
-      deleteLead,
     }),
-    [
-      leads,
-      filteredLeads,
-      search,
-      statusFilter,
-      ownerFilter,
-      getLead,
-      addLead,
-      updateLead,
-      deleteLead,
-    ]
+    [leads, members, getMember, search, statusFilter, ownerFilter]
   );
 
   return (

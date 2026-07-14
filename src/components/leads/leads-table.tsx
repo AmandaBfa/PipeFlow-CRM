@@ -29,7 +29,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
-import { getMember } from "@/lib/placeholder-data";
 import { getInitials } from "@/lib/utils";
 import { LeadStatusBadge } from "./lead-status-badge";
 import { useLeads, type Lead } from "./leads-provider";
@@ -41,11 +40,22 @@ interface LeadsTableProps {
 }
 
 export function LeadsTable({ onCreate, onEdit, onDelete }: LeadsTableProps) {
-  const { leads, filteredLeads, hasActiveFilters, clearFilters } = useLeads();
+  const { leads, getMember, hasActiveFilters } = useLeads();
 
-  // Nenhum lead cadastrado no workspace.
+  // Sem resultados. Com filtros ativos = "nenhum encontrado"; sem filtros =
+  // workspace ainda vazio (a filtragem acontece no banco).
   if (leads.length === 0) {
-    return (
+    return hasActiveFilters ? (
+      <EmptyState
+        icon={SearchX}
+        title="Nenhum lead encontrado"
+        description="Ajuste a busca ou os filtros para ver mais resultados."
+      >
+        <Button variant="outline" asChild>
+          <Link href="/leads">Limpar filtros</Link>
+        </Button>
+      </EmptyState>
+    ) : (
       <EmptyState
         icon={Users}
         title="Nenhum lead ainda"
@@ -55,23 +65,6 @@ export function LeadsTable({ onCreate, onEdit, onDelete }: LeadsTableProps) {
           <Plus className="h-4 w-4" />
           Novo lead
         </Button>
-      </EmptyState>
-    );
-  }
-
-  // Há leads, mas nenhum bate com a busca/filtros atuais.
-  if (filteredLeads.length === 0) {
-    return (
-      <EmptyState
-        icon={SearchX}
-        title="Nenhum lead encontrado"
-        description="Ajuste a busca ou os filtros para ver mais resultados."
-      >
-        {hasActiveFilters && (
-          <Button variant="outline" onClick={clearFilters}>
-            Limpar filtros
-          </Button>
-        )}
       </EmptyState>
     );
   }
@@ -92,7 +85,7 @@ export function LeadsTable({ onCreate, onEdit, onDelete }: LeadsTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredLeads.map((lead) => {
+          {leads.map((lead) => {
             const owner = getMember(lead.ownerId);
             return (
               <TableRow key={lead.id} className="group">
