@@ -46,20 +46,98 @@ export async function getCurrentWorkspace(
   return list.find((ws) => ws.id === activeId) ?? list[0];
 }
 
-// Membro do workspace, no formato consumido pela UI (avatar + seletor de responsável).
+export type WorkspaceRole = "admin" | "member";
+
+// Membro do workspace, no formato consumido pela UI (avatar + papel).
 export interface WorkspaceMember {
   id: string;
   name: string;
   email: string;
   initials: string;
+  role: WorkspaceRole;
 }
 
-// Membros do workspace ativo. Por ora "solo": só o usuário atual (convites = M7;
-// nomes de outros membros exigirão uma tabela `profiles` no futuro).
+// Membros do workspace ativo, com nome real via `profiles` (RLS de co-membros).
 export async function getWorkspaceMembers(): Promise<WorkspaceMember[]> {
-  const user = await getSessionUser();
-  if (!user) return [];
-  return [
-    { id: user.id, name: user.name, email: user.email, initials: user.initials },
-  ];
+  const workspace = await getCurrentWorkspace();
+  if (!workspace) return [];
+
+  const supabase = await createClient();
+  const { data: members } = await supabase
+    .from("workspace_members")
+    .select("user_id, role, created_at")
+    .eq("workspace_id", workspace.id)
+    .order("created_at", { ascending: true });
+
+  if (!members || members.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .in(
+      "id",
+      members.map((m) => m.user_id)
+    );
+
+  const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+
+  return members.map((m) => {
+    const p = profileMap.get(m.user_id);
+    const name = p?.full_name?.trim() || p?.email?.split("@")[0] || "Usuário";
+    return {
+      id: m.user_id,
+      name,
+      email: p?.email ?? "",
+      initials: getInitials(name),
+      role: m.role,
+    };
+  });
+}
+
+// Convite pendente do workspace ativo (a policy de SELECT é admin-only).
+export interface WorkspaceInvite {
+  id: string;
+  email: string;
+  role: WorkspaceRole;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export async function getWorkspaceInvites(): Promise<WorkspaceInvite[]> {
+  const workspace = await getCurrentWorkspace();
+  if (!workspace) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workspace_invites")
+    .select("id, email, role, created_at, expires_at")
+    .eq("workspace_id", workspace.id)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []).map((i) => ({
+    id: i.id,
+    email: i.email,
+    role: i.role,
+    createdAt: i.created_at,
+    expiresAt: i.expires_at,
+  }));
+}
+
+// Papel do usuário logado no workspace ativo (null se não for membro).
+export async function getCurrentMembership(): Promise<WorkspaceRole | null> {
+  const [workspace, user] = await Promise.all([
+    getCurrentWorkspace(),
+    getSessionUser(),
+  ]);
+  if (!workspace || !user) return null;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspace.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  return data?.role ?? null;
 }

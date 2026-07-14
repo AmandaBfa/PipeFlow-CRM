@@ -131,13 +131,15 @@
 
 **Objetivo:** admin convida colaboradores por e-mail.
 
-- [ ] Migration `invitations` (email, token, role, expires_at, workspace_id) + RLS
-- [ ] Envio de convite via **Resend** (Server Action) com link tokenizado
-- [ ] Fluxo de aceite: usuário autenticado vira `workspace_member`
-- [ ] Tela de gestão de membros (`settings`): listar, alterar papel, remover — **restrito a admin**
-- [ ] Enforcement de papéis: `member` acessa leads/deals; ações de billing/membros só `admin`
+- [x] Migration `workspace_invites` (email, token, role, expires_at, workspace_id) + RLS + `profiles` (nomes reais dos membros)
+- [x] Envio de convite via **Resend** (Server Action) com link tokenizado + **link copiável** de fallback
+- [x] Fluxo de aceite: `/invite/[token]` + RPC `accept_invitation` (`SECURITY DEFINER`) — vira `workspace_member`
+- [x] Tela de gestão de membros (`settings`): listar, alterar papel, remover + renomear workspace — **restrito a admin**
+- [x] Enforcement de papéis: `member` acessa leads/deals; convites/membros/renomear só `admin`
 
 **Aceite:** convite chega por e-mail, é aceito e o novo membro passa a ver os dados do workspace com o papel correto.
+
+> **Aula 3.5 — Workspace & Colaboração (concluída):** fecha o **Milestone 7**. **`profiles`** (espelho de `auth.users`, populado pelo trigger + backfill, RLS de co-membros) destrava os **nomes reais** dos membros. **`workspace_invites`** (convites tokenizados, RLS admin-only) + RPCs `SECURITY DEFINER` `get_invite_by_token` e `accept_invitation` (validam **e-mail/expiração + limite Free**). **Convites** via `inviteMember` (admin-only) com **Resend** (`lib/resend.ts`, remetente de teste `onboarding@resend.dev`) e **link copiável** de fallback. **Aceite** em `/invite/[token]` (rota pública): deslogado entra/cadastra com `?next=`, logado aceita e entra no workspace (cookie ativo). **Settings** com gestão de membros (listar, alterar papel, remover, convites pendentes) + **renomear workspace**, tudo **admin-only** (RLS + gate na UI via `getCurrentMembership`). **Limite do plano Free = 2 membros** enforçado no convite **e** no aceite (adiantado do M8). Guardas: não remover o dono, não ficar sem admin, e-mail do aceite tem que bater. Migrations aplicadas via **Management API**. Verificado: `typecheck`/`lint`/`build` + **e2e real** (convite→aceite→membro vê dados via RLS→papel→**remover**→limite Free) + envio real pelo Resend + inspeção do Studio + teste no navegador (aceite em janela anônima). **Fora de escopo:** criar workspace adicional (RPC), domínio verificado no Resend (produção), e o passo de convite do onboarding segue só-UI.
 
 ---
 
@@ -150,7 +152,7 @@
 - [ ] Route Handler `api/stripe/checkout` → Stripe Checkout
 - [ ] Route Handler `api/stripe/webhook` → ativa/desativa plano (verificar assinatura do webhook)
 - [ ] Customer Portal para gerenciar assinatura
-- [ ] **Enforcement dos limites do Free no server:** máx. 2 membros e 50 leads (bloquear criação além do limite)
+- [~] **Enforcement dos limites do Free no server:** **máx. 2 membros** ✅ (convite + aceite, aula 3.5); **falta** o limite de 50 leads
 
 **Aceite:** upgrade via Checkout ativa o Pro pelo webhook; limites do Free impedem a criação excedente; portal cancela/gerencia.
 

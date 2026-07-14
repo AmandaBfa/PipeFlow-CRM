@@ -7,7 +7,11 @@ export const metadata: Metadata = {
   title: "Criar conta",
 };
 
-export default function SignupPage() {
+export default function SignupPage({
+  searchParams,
+}: {
+  searchParams: { next?: string };
+}) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -19,7 +23,7 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <SignupForm />
+      <SignupForm next={searchParams.next} />
 
       <p className="text-center text-sm text-muted-foreground">
         Já tem uma conta?{" "}

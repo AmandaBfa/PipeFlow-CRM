@@ -15,11 +15,14 @@ import { SubmitButton } from "./submit-button";
 
 const initialState: AuthFormState = {};
 
-export function SignupForm() {
+export function SignupForm({ next }: { next?: string }) {
   const [state, formAction] = useFormState(signUpAction, initialState);
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
+      {/* Destino pós-cadastro (ex.: aceitar um convite). */}
+      {next ? <input type="hidden" name="next" value={next} /> : null}
+
       {state.message && <FormMessage>{state.message}</FormMessage>}
 
       <div className="space-y-2">

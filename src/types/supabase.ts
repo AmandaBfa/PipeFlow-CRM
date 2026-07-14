@@ -299,6 +299,74 @@ export type Database = {
           },
         ];
       };
+      profiles: {
+        Row: {
+          id: string;
+          full_name: string | null;
+          email: string | null;
+          avatar_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          full_name?: string | null;
+          email?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string | null;
+          email?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      workspace_invites: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          email: string;
+          role: "admin" | "member";
+          token: string;
+          invited_by: string | null;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          email: string;
+          role?: "admin" | "member";
+          token?: string;
+          invited_by?: string | null;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          email?: string;
+          role?: "admin" | "member";
+          token?: string;
+          invited_by?: string | null;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invites_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -311,6 +379,24 @@ export type Database = {
       is_workspace_admin: {
         Args: { ws: string };
         Returns: boolean;
+      };
+      shares_workspace_with: {
+        Args: { other: string };
+        Returns: boolean;
+      };
+      get_invite_by_token: {
+        Args: { invite_token: string };
+        Returns: {
+          workspace_id: string;
+          workspace_name: string;
+          email: string;
+          role: string;
+          expired: boolean;
+        }[];
+      };
+      accept_invitation: {
+        Args: { invite_token: string };
+        Returns: string;
       };
     };
     Enums: {
