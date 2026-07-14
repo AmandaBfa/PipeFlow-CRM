@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { getSessionUser } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { getInitials } from "@/lib/utils";
 
@@ -43,4 +44,22 @@ export async function getCurrentWorkspace(
   const activeId = cookieStore.get(ACTIVE_WORKSPACE_COOKIE)?.value;
 
   return list.find((ws) => ws.id === activeId) ?? list[0];
+}
+
+// Membro do workspace, no formato consumido pela UI (avatar + seletor de responsável).
+export interface WorkspaceMember {
+  id: string;
+  name: string;
+  email: string;
+  initials: string;
+}
+
+// Membros do workspace ativo. Por ora "solo": só o usuário atual (convites = M7;
+// nomes de outros membros exigirão uma tabela `profiles` no futuro).
+export async function getWorkspaceMembers(): Promise<WorkspaceMember[]> {
+  const user = await getSessionUser();
+  if (!user) return [];
+  return [
+    { id: user.id, name: user.name, email: user.email, initials: user.initials },
+  ];
 }

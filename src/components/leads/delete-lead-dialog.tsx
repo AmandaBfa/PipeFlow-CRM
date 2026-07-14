@@ -1,5 +1,8 @@
 "use client";
 
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useLeads, type Lead } from "./leads-provider";
+import { deleteLead } from "@/lib/actions/lead";
+import type { Lead } from "@/lib/data/leads";
 
 interface DeleteLeadDialogProps {
   open: boolean;
@@ -24,12 +28,22 @@ export function DeleteLeadDialog({
   onOpenChange,
   lead,
 }: DeleteLeadDialogProps) {
-  const { deleteLead } = useLeads();
+  const router = useRouter();
+  const [pending, setPending] = React.useState(false);
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!lead) return;
-    deleteLead(lead.id);
+    setPending(true);
+    const result = await deleteLead(lead.id);
+    setPending(false);
+
+    if (!result.ok) {
+      toast.error(result.error ?? "Não foi possível excluir o lead.");
+      return;
+    }
+
     toast.success(`Lead "${lead.name}" excluído.`);
+    router.refresh();
     onOpenChange(false);
   }
 
@@ -49,10 +63,17 @@ export function DeleteLeadDialog({
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
+            disabled={pending}
           >
             Cancelar
           </Button>
-          <Button type="button" variant="destructive" onClick={handleDelete}>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={pending}
+          >
+            {pending && <Loader2 className="h-4 w-4 animate-spin" />}
             Excluir
           </Button>
         </DialogFooter>

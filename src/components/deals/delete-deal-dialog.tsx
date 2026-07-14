@@ -1,5 +1,8 @@
 "use client";
 
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useDeals, type Deal } from "./deals-provider";
+import { deleteDeal } from "@/lib/actions/deal";
+import type { Deal } from "@/lib/data/deals";
 
 interface DeleteDealDialogProps {
   open: boolean;
@@ -24,12 +28,22 @@ export function DeleteDealDialog({
   onOpenChange,
   deal,
 }: DeleteDealDialogProps) {
-  const { deleteDeal } = useDeals();
+  const router = useRouter();
+  const [pending, setPending] = React.useState(false);
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deal) return;
-    deleteDeal(deal.id);
+    setPending(true);
+    const result = await deleteDeal(deal.id);
+    setPending(false);
+
+    if (!result.ok) {
+      toast.error(result.error ?? "Não foi possível excluir o negócio.");
+      return;
+    }
+
     toast.success(`Negócio "${deal.title}" excluído.`);
+    router.refresh();
     onOpenChange(false);
   }
 
@@ -49,10 +63,17 @@ export function DeleteDealDialog({
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
+            disabled={pending}
           >
             Cancelar
           </Button>
-          <Button type="button" variant="destructive" onClick={handleDelete}>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={pending}
+          >
+            {pending && <Loader2 className="h-4 w-4 animate-spin" />}
             Excluir
           </Button>
         </DialogFooter>

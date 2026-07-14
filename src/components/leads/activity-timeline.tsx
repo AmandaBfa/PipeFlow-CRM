@@ -1,12 +1,9 @@
 import { Mail, Phone, StickyNote, Users, type LucideIcon } from "lucide-react";
 
-import {
-  getActivitiesForLead,
-  getMember,
-  type ActivityType,
-} from "@/lib/placeholder-data";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { ActivityType } from "@/lib/activity-type";
+import type { Activity } from "@/lib/data/activities";
 
 const ACTIVITY_CONFIG: Record<
   ActivityType,
@@ -26,11 +23,8 @@ const ACTIVITY_CONFIG: Record<
   },
 };
 
-// Timeline visual de atividades do lead (dados mockados nesta aula; a tabela
-// `activities` real entra no Milestone 5).
-export function ActivityTimeline({ leadId }: { leadId: string }) {
-  const activities = getActivitiesForLead(leadId);
-
+// Timeline de atividades do lead (dados reais da tabela `activities`, via props).
+export function ActivityTimeline({ activities }: { activities: Activity[] }) {
   if (activities.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -44,7 +38,6 @@ export function ActivityTimeline({ leadId }: { leadId: string }) {
       {activities.map((activity, index) => {
         const config = ACTIVITY_CONFIG[activity.type];
         const Icon = config.icon;
-        const author = getMember(activity.authorId);
         const isLast = index === activities.length - 1;
 
         return (
@@ -67,7 +60,7 @@ export function ActivityTimeline({ leadId }: { leadId: string }) {
               <div className="flex flex-wrap items-center gap-x-2 text-sm">
                 <span className="font-medium">{config.label}</span>
                 <span className="text-muted-foreground">
-                  · {author?.name ?? "—"}
+                  · {activity.authorName ?? "—"}
                 </span>
               </div>
               <p className="mt-0.5 text-sm text-muted-foreground">

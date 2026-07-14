@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   closestCorners,
   DndContext,
@@ -12,7 +13,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { KanbanSquare, Plus } from "lucide-react";
+import { KanbanSquare, Plus, SearchX } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,8 @@ interface DealsBoardProps {
 }
 
 export function DealsBoard({ onCreate, onEdit, onDelete }: DealsBoardProps) {
-  const { deals, dealsByStage, stageMetrics, getDeal, moveDeal } = useDeals();
+  const { deals, dealsByStage, stageMetrics, getDeal, moveDeal, hasActiveFilters } =
+    useDeals();
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
@@ -67,9 +69,19 @@ export function DealsBoard({ onCreate, onEdit, onDelete }: DealsBoardProps) {
     }
   }
 
-  // Nenhum negócio cadastrado no workspace.
+  // Sem resultados. Com filtros = "nenhum encontrado"; sem filtros = vazio.
   if (deals.length === 0) {
-    return (
+    return hasActiveFilters ? (
+      <EmptyState
+        icon={SearchX}
+        title="Nenhum negócio encontrado"
+        description="Ajuste a busca ou os filtros para ver mais resultados."
+      >
+        <Button variant="outline" asChild>
+          <Link href="/pipeline">Limpar filtros</Link>
+        </Button>
+      </EmptyState>
+    ) : (
       <EmptyState
         icon={KanbanSquare}
         title="Nenhum negócio ainda"

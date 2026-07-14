@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,23 +24,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FieldError } from "@/components/form-messages";
+import { createLead, updateLead } from "@/lib/actions/lead";
 import { LEAD_STATUS_OPTIONS, type LeadStatus } from "@/lib/lead-status";
-import { placeholderMembers } from "@/lib/placeholder-data";
 import { leadSchema } from "@/lib/validations/lead";
-import { useLeads, type Lead } from "./leads-provider";
+import type { WorkspaceMember } from "@/lib/workspace";
+import type { Lead } from "@/lib/data/leads";
 
 interface LeadFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   // Quando presente, o dialog está em modo de edição.
   lead?: Lead;
+  members: WorkspaceMember[];
 }
 
-const DEFAULT_OWNER = placeholderMembers[0].id;
-
-export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps) {
-  const { addLead, updateLead } = useLeads();
+export function LeadFormDialog({
+  open,
+  onOpenChange,
+  lead,
+  members,
+}: LeadFormDialogProps) {
+  const router = useRouter();
   const isEditing = Boolean(lead);
+  const defaultOwner = members[0]?.id ?? "";
 
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -47,7 +54,7 @@ export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps
   const [company, setCompany] = React.useState("");
   const [position, setPosition] = React.useState("");
   const [status, setStatus] = React.useState<LeadStatus>("new");
-  const [ownerId, setOwnerId] = React.useState<string>(DEFAULT_OWNER);
+  const [ownerId, setOwnerId] = React.useState<string>(defaultOwner);
   const [errors, setErrors] = React.useState<
     Record<string, string[] | undefined>
   >({});
@@ -62,9 +69,9 @@ export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps
     setCompany(lead?.company ?? "");
     setPosition(lead?.position ?? "");
     setStatus(lead?.status ?? "new");
-    setOwnerId(lead?.ownerId ?? DEFAULT_OWNER);
+    setOwnerId(lead?.ownerId ?? defaultOwner);
     setErrors({});
-  }, [open, lead]);
+  }, [open, lead, defaultOwner]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -84,18 +91,20 @@ export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps
     }
     setErrors({});
     setPending(true);
-    // Simula a latência de uma chamada de rede para exibir o loading.
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    if (lead) {
-      updateLead(lead.id, parsed.data);
-      toast.success("Lead atualizado com sucesso.");
-    } else {
-      addLead(parsed.data);
-      toast.success("Lead criado com sucesso.");
-    }
+    const result = lead
+      ? await updateLead(lead.id, parsed.data)
+      : await createLead(parsed.data);
 
     setPending(false);
+
+    if (!result.ok) {
+      toast.error(result.error ?? "Não foi possível salvar o lead.");
+      return;
+    }
+
+    toast.success(lead ? "Lead atualizado com sucesso." : "Lead criado com sucesso.");
+    router.refresh();
     onOpenChange(false);
   }
 
@@ -199,7 +208,7 @@ export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {placeholderMembers.map((member) => (
+                  {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name}
                     </SelectItem>

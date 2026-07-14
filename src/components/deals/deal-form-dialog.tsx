@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,8 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FieldError } from "@/components/form-messages";
+import { createDeal, updateDeal } from "@/lib/actions/deal";
 import { DEAL_STAGE_OPTIONS, type DealStage } from "@/lib/deal-stage";
-import { placeholderLeads, placeholderMembers } from "@/lib/placeholder-data";
 import { dealSchema } from "@/lib/validations/deal";
 import { useDeals, type Deal } from "./deals-provider";
 
@@ -37,23 +38,23 @@ interface DealFormDialogProps {
   presetStage?: DealStage;
 }
 
-const DEFAULT_OWNER = placeholderMembers[0].id;
-const DEFAULT_LEAD = placeholderLeads[0].id;
-
 export function DealFormDialog({
   open,
   onOpenChange,
   deal,
   presetStage,
 }: DealFormDialogProps) {
-  const { addDeal, updateDeal } = useDeals();
+  const router = useRouter();
+  const { members, leadOptions } = useDeals();
   const isEditing = Boolean(deal);
+  const defaultOwner = members[0]?.id ?? "";
+  const defaultLead = leadOptions[0]?.id ?? "";
 
   const [title, setTitle] = React.useState("");
   const [value, setValue] = React.useState("");
   const [stage, setStage] = React.useState<DealStage>("new_lead");
-  const [leadId, setLeadId] = React.useState(DEFAULT_LEAD);
-  const [ownerId, setOwnerId] = React.useState(DEFAULT_OWNER);
+  const [leadId, setLeadId] = React.useState(defaultLead);
+  const [ownerId, setOwnerId] = React.useState(defaultOwner);
   const [dueDate, setDueDate] = React.useState("");
   const [errors, setErrors] = React.useState<
     Record<string, string[] | undefined>
@@ -65,11 +66,11 @@ export function DealFormDialog({
     setTitle(deal?.title ?? "");
     setValue(deal ? String(deal.value) : "");
     setStage(deal?.stage ?? presetStage ?? "new_lead");
-    setLeadId(deal?.leadId ?? DEFAULT_LEAD);
-    setOwnerId(deal?.ownerId ?? DEFAULT_OWNER);
+    setLeadId(deal?.leadId ?? defaultLead);
+    setOwnerId(deal?.ownerId ?? defaultOwner);
     setDueDate(deal?.dueDate ?? "");
     setErrors({});
-  }, [open, deal, presetStage]);
+  }, [open, deal, presetStage, defaultLead, defaultOwner]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -88,17 +89,22 @@ export function DealFormDialog({
     }
     setErrors({});
     setPending(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    if (deal) {
-      updateDeal(deal.id, parsed.data);
-      toast.success("Negócio atualizado com sucesso.");
-    } else {
-      addDeal(parsed.data);
-      toast.success("Negócio criado com sucesso.");
-    }
+    const result = deal
+      ? await updateDeal(deal.id, parsed.data)
+      : await createDeal(parsed.data);
 
     setPending(false);
+
+    if (!result.ok) {
+      toast.error(result.error ?? "Não foi possível salvar o negócio.");
+      return;
+    }
+
+    toast.success(
+      deal ? "Negócio atualizado com sucesso." : "Negócio criado com sucesso."
+    );
+    router.refresh();
     onOpenChange(false);
   }
 
@@ -175,12 +181,16 @@ export function DealFormDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="lead">Lead</Label>
-              <Select value={leadId} onValueChange={setLeadId}>
+              <Select
+                value={leadId}
+                onValueChange={setLeadId}
+                disabled={leadOptions.length === 0}
+              >
                 <SelectTrigger id="lead">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {placeholderLeads.map((lead) => (
+                  {leadOptions.map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
                       {lead.name}
                       {lead.company ? ` · ${lead.company}` : ""}
@@ -188,7 +198,13 @@ export function DealFormDialog({
                   ))}
                 </SelectContent>
               </Select>
-              <FieldError errors={errors.leadId} />
+              {leadOptions.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Cadastre um lead antes de criar um negócio.
+                </p>
+              ) : (
+                <FieldError errors={errors.leadId} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="owner">Responsável</Label>
@@ -197,7 +213,7 @@ export function DealFormDialog({
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {placeholderMembers.map((member) => (
+                  {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name}
                     </SelectItem>
@@ -217,7 +233,7 @@ export function DealFormDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending || leadOptions.length === 0}>
               {pending && <Loader2 className="h-4 w-4 animate-spin" />}
               {isEditing ? "Salvar alterações" : "Criar negócio"}
             </Button>

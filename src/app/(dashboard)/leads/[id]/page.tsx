@@ -1,13 +1,8 @@
-"use client";
-
-import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   Building2,
   Mail,
-  Pencil,
   Phone,
   User,
   type LucideIcon,
@@ -23,21 +18,27 @@ import {
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { ActivityTimeline } from "@/components/leads/activity-timeline";
-import { LeadFormDialog } from "@/components/leads/lead-form-dialog";
+import { AddActivityForm } from "@/components/leads/add-activity-form";
+import { LeadDetailActions } from "@/components/leads/lead-detail-actions";
 import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
-import { useLeads } from "@/components/leads/leads-provider";
+import { getActivities } from "@/lib/data/activities";
+import { getLeadById } from "@/lib/data/leads";
 import { formatDate } from "@/lib/format";
-import { getMember } from "@/lib/placeholder-data";
 import { getInitials } from "@/lib/utils";
+import { getWorkspaceMembers } from "@/lib/workspace";
 
-export default function LeadDetailPage() {
-  const params = useParams<{ id: string }>();
-  const { getLead } = useLeads();
-  const [editOpen, setEditOpen] = React.useState(false);
+export default async function LeadDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const [lead, members, activities] = await Promise.all([
+    getLeadById(params.id),
+    getWorkspaceMembers(),
+    getActivities(params.id),
+  ]);
 
-  const lead = getLead(params.id);
-
-  // Lead inexistente (ex.: criado em memória e acessado após um reload).
+  // Lead inexistente ou de outro workspace (o RLS não o retorna).
   if (!lead) {
     return (
       <div className="space-y-6">
@@ -60,7 +61,7 @@ export default function LeadDetailPage() {
     );
   }
 
-  const owner = getMember(lead.ownerId);
+  const owner = members.find((m) => m.id === lead.ownerId);
   const subtitle =
     [lead.position, lead.company].filter(Boolean).join(" · ") || "Sem empresa";
 
@@ -73,10 +74,7 @@ export default function LeadDetailPage() {
             Voltar
           </Link>
         </Button>
-        <Button variant="outline" onClick={() => setEditOpen(true)}>
-          <Pencil className="h-4 w-4" />
-          Editar
-        </Button>
+        <LeadDetailActions lead={lead} members={members} />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -102,7 +100,7 @@ export default function LeadDetailPage() {
             <CardTitle className="text-base">Informações</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
-            <InfoRow icon={Mail} label="E-mail" value={lead.email} />
+            <InfoRow icon={Mail} label="E-mail" value={lead.email || "—"} />
             <InfoRow icon={Phone} label="Telefone" value={lead.phone || "—"} />
             <InfoRow
               icon={Building2}
@@ -120,13 +118,12 @@ export default function LeadDetailPage() {
           <CardHeader>
             <CardTitle className="text-base">Atividades</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ActivityTimeline leadId={lead.id} />
+          <CardContent className="space-y-6">
+            <AddActivityForm leadId={lead.id} />
+            <ActivityTimeline activities={activities} />
           </CardContent>
         </Card>
       </div>
-
-      <LeadFormDialog open={editOpen} onOpenChange={setEditOpen} lead={lead} />
     </div>
   );
 }

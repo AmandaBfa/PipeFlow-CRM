@@ -1,12 +1,17 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
+import { moveDealStage } from "@/lib/actions/deal";
 import { DEAL_STAGES, type DealStage } from "@/lib/deal-stage";
-import { placeholderDeals, type PlaceholderDeal } from "@/lib/placeholder-data";
-import type { DealInput } from "@/lib/validations/deal";
+import type { Deal } from "@/lib/data/deals";
+import type { LeadOption } from "@/lib/data/leads";
+import type { WorkspaceMember } from "@/lib/workspace";
 
-export type Deal = PlaceholderDeal;
+// Re-exporta o view-model para os componentes que importavam `Deal` daqui.
+export type { Deal } from "@/lib/data/deals";
 
 interface StageMetric {
   count: number;
@@ -15,52 +20,56 @@ interface StageMetric {
 
 interface DealsContextValue {
   deals: Deal[];
-  filteredDeals: Deal[];
   dealsByStage: Record<DealStage, Deal[]>;
   stageMetrics: Record<DealStage, StageMetric>;
-  search: string;
-  ownerFilter: string; // id do membro | "all"
-  hasActiveFilters: boolean;
-  setSearch: (value: string) => void;
-  setOwnerFilter: (value: string) => void;
-  clearFilters: () => void;
+  members: WorkspaceMember[];
+  leadOptions: LeadOption[];
   getDeal: (id: string) => Deal | undefined;
-  addDeal: (input: DealInput) => Deal;
-  updateDeal: (id: string, input: DealInput) => void;
-  deleteDeal: (id: string) => void;
+  getMember: (id: string | null) => WorkspaceMember | undefined;
+  getLeadOption: (id: string | null) => LeadOption | undefined;
   moveDeal: (id: string, stage: DealStage) => void;
+  search: string;
+  ownerFilter: string;
+  hasActiveFilters: boolean;
 }
 
 const DealsContext = React.createContext<DealsContextValue | null>(null);
 
-// Estado dos negócios em memória (aula 2.4). Semeado por placeholder-data, vive
-// no layout de /pipeline. No Milestone 4 as mutações abaixo (add/update/delete/
-// move) viram Server Actions do Supabase.
-export function DealsProvider({ children }: { children: React.ReactNode }) {
-  const [deals, setDeals] = React.useState<Deal[]>(placeholderDeals);
-  const [search, setSearch] = React.useState("");
-  const [ownerFilter, setOwnerFilter] = React.useState<string>("all");
+// Container de dados dos negócios — hidratado pelo servidor (já filtrados no
+// banco). O drag-and-drop faz update OTIMISTA local e persiste via Server Action
+// (`moveDealStage`); em erro, o `router.refresh()` re-sincroniza e reverte.
+export function DealsProvider({
+  deals: initialDeals,
+  members,
+  leadOptions,
+  search,
+  ownerFilter,
+  children,
+}: {
+  deals: Deal[];
+  members: WorkspaceMember[];
+  leadOptions: LeadOption[];
+  search: string;
+  ownerFilter: string;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [, startTransition] = React.useTransition();
+  const [deals, setDeals] = React.useState<Deal[]>(initialDeals);
 
-  const filteredDeals = React.useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return deals.filter((deal) => {
-      const matchesSearch =
-        term === "" || deal.title.toLowerCase().includes(term);
-      const matchesOwner = ownerFilter === "all" || deal.ownerId === ownerFilter;
-      return matchesSearch && matchesOwner;
-    });
-  }, [deals, search, ownerFilter]);
+  // Ressincroniza com o servidor quando os dados (props) mudam.
+  React.useEffect(() => {
+    setDeals(initialDeals);
+  }, [initialDeals]);
 
-  // Negócios agrupados por etapa (uma lista por coluna do board).
   const dealsByStage = React.useMemo(() => {
     const grouped = Object.fromEntries(
       DEAL_STAGES.map((stage) => [stage, [] as Deal[]])
     ) as Record<DealStage, Deal[]>;
-    for (const deal of filteredDeals) grouped[deal.stage].push(deal);
+    for (const deal of deals) grouped[deal.stage].push(deal);
     return grouped;
-  }, [filteredDeals]);
+  }, [deals]);
 
-  // Contagem + soma de valor por etapa (header da coluna).
   const stageMetrics = React.useMemo(() => {
     return Object.fromEntries(
       DEAL_STAGES.map((stage) => [
@@ -77,93 +86,63 @@ export function DealsProvider({ children }: { children: React.ReactNode }) {
     (id: string) => deals.find((deal) => deal.id === id),
     [deals]
   );
+  const getMember = React.useCallback(
+    (id: string | null) => (id ? members.find((m) => m.id === id) : undefined),
+    [members]
+  );
+  const getLeadOption = React.useCallback(
+    (id: string | null) => (id ? leadOptions.find((l) => l.id === id) : undefined),
+    [leadOptions]
+  );
 
-  const addDeal = React.useCallback((input: DealInput) => {
-    // TODO(deals): criar via Server Action + Supabase (Milestone 4).
-    const deal: Deal = {
-      id: `deal_${crypto.randomUUID()}`,
-      title: input.title,
-      value: input.value,
-      stage: input.stage,
-      leadId: input.leadId,
-      ownerId: input.ownerId,
-      dueDate: input.dueDate || undefined,
-      createdAt: new Date().toISOString(),
-    };
-    setDeals((prev) => [deal, ...prev]);
-    return deal;
-  }, []);
-
-  const updateDeal = React.useCallback((id: string, input: DealInput) => {
-    // TODO(deals): atualizar via Server Action + Supabase (Milestone 4).
-    setDeals((prev) =>
-      prev.map((deal) =>
-        deal.id === id
-          ? {
-              ...deal,
-              title: input.title,
-              value: input.value,
-              stage: input.stage,
-              leadId: input.leadId,
-              ownerId: input.ownerId,
-              dueDate: input.dueDate || undefined,
-            }
-          : deal
-      )
-    );
-  }, []);
-
-  const deleteDeal = React.useCallback((id: string) => {
-    // TODO(deals): excluir via Server Action + Supabase (Milestone 4).
-    setDeals((prev) => prev.filter((deal) => deal.id !== id));
-  }, []);
-
-  // Movimentação otimista/instantânea ao soltar o card. O card vai para o topo
-  // da coluna destino (feedback visível). O toast fica a cargo de quem chama.
-  const moveDeal = React.useCallback((id: string, stage: DealStage) => {
-    // TODO(deals): persistir a mudança de etapa via Server Action (Milestone 4).
-    setDeals((prev) => {
-      const index = prev.findIndex((deal) => deal.id === id);
-      if (index === -1 || prev[index].stage === stage) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(index, 1);
-      return [{ ...moved, stage }, ...next];
-    });
-  }, []);
+  const moveDeal = React.useCallback(
+    (id: string, stage: DealStage) => {
+      // Otimista: move o card para o topo da coluna destino na hora.
+      setDeals((prev) => {
+        const index = prev.findIndex((deal) => deal.id === id);
+        if (index === -1 || prev[index].stage === stage) return prev;
+        const next = [...prev];
+        const [moved] = next.splice(index, 1);
+        return [{ ...moved, stage }, ...next];
+      });
+      startTransition(async () => {
+        const result = await moveDealStage(id, stage);
+        if (!result.ok) {
+          toast.error(result.error ?? "Não foi possível mover o negócio.");
+        }
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
   const value = React.useMemo<DealsContextValue>(
     () => ({
       deals,
-      filteredDeals,
       dealsByStage,
       stageMetrics,
+      members,
+      leadOptions,
+      getDeal,
+      getMember,
+      getLeadOption,
+      moveDeal,
       search,
       ownerFilter,
       hasActiveFilters: search.trim() !== "" || ownerFilter !== "all",
-      setSearch,
-      setOwnerFilter,
-      clearFilters: () => {
-        setSearch("");
-        setOwnerFilter("all");
-      },
-      getDeal,
-      addDeal,
-      updateDeal,
-      deleteDeal,
-      moveDeal,
     }),
     [
       deals,
-      filteredDeals,
       dealsByStage,
       stageMetrics,
+      members,
+      leadOptions,
+      getDeal,
+      getMember,
+      getLeadOption,
+      moveDeal,
       search,
       ownerFilter,
-      getDeal,
-      addDeal,
-      updateDeal,
-      deleteDeal,
-      moveDeal,
     ]
   );
 
