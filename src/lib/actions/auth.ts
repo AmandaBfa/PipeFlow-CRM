@@ -97,9 +97,10 @@ export async function signUpAction(
   }
 
   // Com a confirmação de e-mail desligada, o signup já cria a sessão.
-  // O trigger provisiona o workspace; o onboarding só renomeia.
+  // O trigger provisiona o workspace; o onboarding só renomeia. Se veio de um
+  // convite (?next=/invite/...), volta pra lá em vez do onboarding.
   revalidatePath("/", "layout");
-  redirect("/onboarding");
+  redirect(safeInternalPath(formData.get("next"), "/onboarding"));
 }
 
 export async function signOutAction(): Promise<void> {

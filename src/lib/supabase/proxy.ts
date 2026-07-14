@@ -22,7 +22,9 @@ const PUBLIC_PATHS = new Set([
 ]);
 
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.has(pathname);
+  // `/invite/<token>` é público: o convidado (às vezes deslogado) precisa ver o
+  // convite antes de entrar/cadastrar.
+  return PUBLIC_PATHS.has(pathname) || pathname.startsWith("/invite/");
 }
 
 export async function updateSession(
