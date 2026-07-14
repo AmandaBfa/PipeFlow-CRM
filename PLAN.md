@@ -67,10 +67,10 @@
 
 **Objetivo:** CRUD completo de leads com busca e filtros.
 
-- [x] Migration `leads` (name, email, phone, company, position, status, owner_id, workspace_id) + RLS por `workspace_id` — **aplicada na aula 3.2** (Server Actions ainda `TODO`)
+- [x] Migration `leads` (name, email, phone, company, position, status, owner_id, workspace_id) + RLS por `workspace_id`
 - [x] Schemas Zod em `lib/validations/lead.ts` (`leadSchema`) + enum de status em `lib/lead-status.ts` (`new`/`contacted`/`qualified`/`unqualified`/`converted`)
-- [~] Server Actions: create / update / delete lead — **fake em memória** (`LeadsProvider`) na aula 2.3; viram Server Actions do Supabase (marcado com `TODO(leads)`)
-- [~] Lista de leads (`table` shadcn) com busca (nome/e-mail/empresa) ✅ e filtros por status e responsável ✅ — **falta filtro por data**
+- [x] Server Actions: create / update / delete lead — **reais no Supabase** (`lib/actions/lead.ts`), com Zod + `revalidatePath` (aula 3.4)
+- [~] Lista de leads (`table` shadcn) com **busca e filtros aplicados no banco** (`?q/status/owner` via `searchParams` → SQL) — **falta filtro por data**
 - [x] Formulário de criação/edição (**dialog**) com validação Zod, loading e erros por campo
 - [x] Página de detalhe do lead (perfil + **timeline de atividades visual**, adiantada do Milestone 5)
 
@@ -78,17 +78,19 @@
 
 > **Aula 2.3 — Gestão de Leads UI (concluída):** UI completa de leads com **dados fake em memória** (`LeadsProvider`): lista em `table` com **busca** (nome/empresa/e-mail) e **filtros** (status, responsável), **badges coloridos por status** (`lead-status-badge`), CRUD via **dialog** (criar/editar/excluir) com validação **Zod** + loading + erros por campo, e **página de detalhe** (`/leads/[id]`) com card de contato e **timeline de atividades visual** (mock). ~13 leads brasileiros semente. Adicionado shadcn `select`; `FieldError`/`FormMessage` movidos para `components/form-messages.tsx` (compartilhado). A persistência real (migration `leads` + RLS + Server Actions) troca as mutações do provider (marcadas com `TODO(leads)`) pelo Supabase. Verificado com `typecheck`/`lint`/`build` + **teste E2E** (13/13).
 
+> **Aula 3.4 — Leads & Pipeline com Dados Reais + Atividades (concluída):** substitui **todo dado fake por Supabase** (Server Actions + RLS), fechando os Milestones **3, 4, 5** e o dashboard do **M6**. **Leads:** lista buscada no servidor com **busca e filtros no banco** (`?q/status/owner` via `searchParams` → SQL, busca com debounce); Server Actions `createLead`/`updateLead`/`deleteLead`; página de detalhe virou **Server Component**. **Pipeline:** board buscado no servidor; **drag-and-drop persiste a etapa** (update otimista + `moveDealStage`, revertendo em erro). **Dashboard:** KPIs, funil e prazos próximos por **queries agregadas** (`lib/metrics.ts` assíncrono). **Atividades (M5):** tabela `activities` ligada — **formulário rápido** + timeline do banco (`createActivity`/`getActivities`). Base nova: `lib/data/{leads,deals,activities}`, `lib/actions/{lead,deal,activity,types}`, `getWorkspaceMembers()` (solo por ora), `ui/textarea`, `lib/activity-type`. Arquitetura: **fetch nas páginas** (layouts do Next não recebem `searchParams`), providers hidratados das props; **`placeholder-data.ts` removido** (zero dado fake). Decisões: **responsável = solo** (só o usuário; multi-membro exige `profiles`, pós-M7); **negócio exige um lead** (dica + botão desabilitado em workspace vazio). Verificado: `typecheck`/`lint`/`build` + **e2e fiel** via `@supabase/supabase-js` (criar/persistir, busca/filtro no banco, drag persiste, métricas, isolamento por RLS) + teste no navegador. PR **#10** mergeado.
+
 ---
 
 ## Milestone 4 — Pipeline Kanban de Vendas
 
 **Objetivo:** board de negócios com drag-and-drop persistido.
 
-- [x] Migration `deals` (title, value, stage, lead_id, owner_id, due_date, workspace_id) + RLS — **aplicada na aula 3.2** (Server Actions ainda `TODO`)
+- [x] Migration `deals` (title, value, stage, lead_id, owner_id, due_date, workspace_id) + RLS
 - [x] Enum de etapas: `new_lead → contacted → proposal_sent → negotiation → won → lost` (`lib/deal-stage.ts`)
 - [x] Board com @dnd-kit: colunas por etapa, cards arrastáveis (`"use client"`)
 - [x] Card: título, valor (R$), lead vinculado, responsável, prazo
-- [~] Persistir mudança de etapa — **update otimista em memória** (`moveDeal`) na aula 2.4; Server Action real (Supabase) marcada com `TODO(deals)`
+- [x] Persistir mudança de etapa — **update otimista + Server Action** (`moveDealStage`), revertendo em erro; sobrevive a reload (aula 3.4)
 - [x] Criar/editar negócio a partir do board
 
 **Aceite:** arrastar card entre colunas atualiza a etapa no banco e sobrevive a reload.
@@ -101,10 +103,10 @@
 
 **Objetivo:** histórico cronológico de interações por lead.
 
-- [x] Migration `activities` (type: call|email|meeting|note, description, author_id, lead_id, created_at) + RLS — **aplicada na aula 3.2** (Server Action ainda `TODO`)
-- [ ] Server Action para registrar atividade
-- [x] Timeline na página de detalhe do lead (ordem cronológica, ícone por tipo) — **UI feita na aula 2.3** com dados mock (`ActivityTimeline`)
-- [ ] Formulário rápido de nova atividade
+- [x] Migration `activities` (type: call|email|meeting|note, description, author_id, lead_id, created_at) + RLS
+- [x] Server Action para registrar atividade (`createActivity`, valida que o lead é do workspace)
+- [x] Timeline na página de detalhe do lead (ordem cronológica, ícone por tipo) — **dados reais** do banco (`getActivities`) desde a aula 3.4
+- [x] Formulário rápido de nova atividade (tipo + descrição)
 
 **Aceite:** registrar diferentes tipos de atividade e vê-las na timeline do lead correto.
 
@@ -116,10 +118,10 @@
 
 **Objetivo:** visão gerencial de vendas.
 
-- [ ] Cards: total de leads, negócios abertos, valor total do pipeline, taxa de conversão (queries agregadas no server)
-- [ ] Gráfico de funil de vendas com **Recharts**
-- [ ] Lista de negócios do usuário logado com prazo próximo
-- [ ] Skeletons de loading
+- [x] Cards: total de leads, negócios abertos, valor total do pipeline, taxa de conversão (queries agregadas no server) — aula 3.4
+- [x] Gráfico de funil de vendas com **Recharts** (UI da aula 2.5, dados reais na 3.4)
+- [x] Lista de negócios do usuário logado com prazo próximo (`getUpcomingDeals`)
+- [x] Skeletons de loading (`dashboard/loading.tsx`)
 
 **Aceite:** números batem com os dados do workspace; funil reflete a distribuição por etapa.
 
