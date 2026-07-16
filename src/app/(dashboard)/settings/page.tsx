@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/page-header";
+import { BillingSettings } from "@/components/settings/billing-settings";
 import { MembersManager } from "@/components/settings/members-manager";
 import { WorkspaceSettings } from "@/components/settings/workspace-settings";
+import { getWorkspaceBilling } from "@/lib/data/subscription";
 import { getSessionUser } from "@/lib/session";
 import {
   getCurrentMembership,
@@ -16,12 +18,13 @@ export const metadata: Metadata = {
 };
 
 export default async function SettingsPage() {
-  const [workspace, role, members, invites, user] = await Promise.all([
+  const [workspace, role, members, invites, user, billing] = await Promise.all([
     getCurrentWorkspace(),
     getCurrentMembership(),
     getWorkspaceMembers(),
     getWorkspaceInvites(),
     getSessionUser(),
+    getWorkspaceBilling(),
   ]);
 
   const isAdmin = role === "admin";
@@ -30,12 +33,12 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Configurações"
-        description="Workspace, membros e colaboração."
+        description="Workspace, membros, plano e colaboração."
       />
 
-      {workspace && (
-        <WorkspaceSettings name={workspace.name} isAdmin={isAdmin} />
-      )}
+      {workspace && <WorkspaceSettings name={workspace.name} isAdmin={isAdmin} />}
+
+      {billing && <BillingSettings billing={billing} isAdmin={isAdmin} />}
 
       {workspace && user && (
         <MembersManager

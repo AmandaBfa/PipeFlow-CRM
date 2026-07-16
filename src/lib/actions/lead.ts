@@ -18,6 +18,21 @@ export async function createLead(input: LeadInput): Promise<MutationResult> {
   if (!workspace) return { ok: false, error: "Nenhum workspace ativo." };
 
   const supabase = await createClient();
+
+  // Limite do plano Free: máx. 50 leads (Pro é ilimitado).
+  if (workspace.plan === "free") {
+    const { count } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspace.id);
+    if ((count ?? 0) >= 50) {
+      return {
+        ok: false,
+        error: "O plano Free permite até 50 leads. Faça upgrade para o Pro.",
+      };
+    }
+  }
+
   const { error } = await supabase.from("leads").insert({
     workspace_id: workspace.id,
     name: parsed.data.name,

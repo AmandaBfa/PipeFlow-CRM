@@ -22,9 +22,14 @@ const PUBLIC_PATHS = new Set([
 ]);
 
 function isPublicPath(pathname: string): boolean {
-  // `/invite/<token>` é público: o convidado (às vezes deslogado) precisa ver o
-  // convite antes de entrar/cadastrar.
-  return PUBLIC_PATHS.has(pathname) || pathname.startsWith("/invite/");
+  // `/invite/<token>` é público (convidado deslogado vê o convite). As rotas
+  // `/api/*` cuidam da própria auth (ex.: webhook do Stripe verifica assinatura)
+  // e não podem levar o redirect de página.
+  return (
+    PUBLIC_PATHS.has(pathname) ||
+    pathname.startsWith("/invite/") ||
+    pathname.startsWith("/api/")
+  );
 }
 
 export async function updateSession(

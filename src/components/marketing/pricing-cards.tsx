@@ -43,9 +43,9 @@ const PLANS: Plan[] = [
       "Colaboração em equipe",
       "Suporte prioritário",
     ],
-    // TODO(stripe): apontar para o Checkout no Milestone 8.
+    // Logado → billing na Settings; deslogado → cai no login e volta.
     cta: "Assinar Pro",
-    href: "/signup",
+    href: "/settings",
     highlighted: true,
   },
 ];
