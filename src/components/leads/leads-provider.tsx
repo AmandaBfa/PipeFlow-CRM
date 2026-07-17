@@ -4,6 +4,7 @@ import * as React from "react";
 
 import type { Lead } from "@/lib/data/leads";
 import type { LeadStatus } from "@/lib/lead-status";
+import type { LimitCheck } from "@/lib/limits";
 import type { WorkspaceMember } from "@/lib/workspace";
 
 // Re-exporta o view-model para os componentes que importavam `Lead` daqui.
@@ -17,6 +18,8 @@ interface LeadsContextValue {
   statusFilter: LeadStatus | "all";
   ownerFilter: string;
   hasActiveFilters: boolean;
+  /** Uso/limite de leads do plano (vem do servidor, `lib/limits`). */
+  leadUsage: LimitCheck;
 }
 
 const LeadsContext = React.createContext<LeadsContextValue | null>(null);
@@ -30,6 +33,7 @@ export function LeadsProvider({
   search,
   statusFilter,
   ownerFilter,
+  leadUsage,
   children,
 }: {
   leads: Lead[];
@@ -37,6 +41,7 @@ export function LeadsProvider({
   search: string;
   statusFilter: LeadStatus | "all";
   ownerFilter: string;
+  leadUsage: LimitCheck;
   children: React.ReactNode;
 }) {
   const getMember = React.useCallback(
@@ -54,8 +59,9 @@ export function LeadsProvider({
       ownerFilter,
       hasActiveFilters:
         search.trim() !== "" || statusFilter !== "all" || ownerFilter !== "all",
+      leadUsage,
     }),
-    [leads, members, getMember, search, statusFilter, ownerFilter]
+    [leads, members, getMember, search, statusFilter, ownerFilter, leadUsage]
   );
 
   return (
