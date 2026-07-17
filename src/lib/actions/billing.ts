@@ -52,8 +52,11 @@ export async function createCheckoutSession(): Promise<MutationResult> {
       ? { customer: customerId }
       : { customer_email: user?.email }),
     client_reference_id: workspace.id,
-    metadata: { workspace_id: workspace.id },
-    subscription_data: { metadata: { workspace_id: workspace.id } },
+    // O webhook lê workspace_id + user_id daqui (quem iniciou o upgrade).
+    metadata: { workspace_id: workspace.id, user_id: user?.id ?? "" },
+    subscription_data: {
+      metadata: { workspace_id: workspace.id, user_id: user?.id ?? "" },
+    },
     allow_promotion_codes: true,
     success_url: `${appUrl()}/settings?checkout=success`,
     cancel_url: `${appUrl()}/settings?checkout=cancel`,

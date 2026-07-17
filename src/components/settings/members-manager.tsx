@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Copy, Loader2, Mail, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ import {
   inviteMember,
   removeMember,
 } from "@/lib/actions/member";
+import type { LimitCheck } from "@/lib/limits";
 import type {
   WorkspaceInvite,
   WorkspaceMember,
@@ -41,20 +43,18 @@ const ROLE_LABEL: Record<WorkspaceRole, string> = {
   member: "Membro",
 };
 
-const FREE_LIMIT = 2;
-
 export function MembersManager({
   members,
   invites,
   currentUserId,
   isAdmin,
-  plan,
+  memberUsage,
 }: {
   members: WorkspaceMember[];
   invites: WorkspaceInvite[];
   currentUserId: string;
   isAdmin: boolean;
-  plan: "free" | "pro";
+  memberUsage: LimitCheck;
 }) {
   const router = useRouter();
   const [email, setEmail] = React.useState("");
@@ -63,7 +63,8 @@ export function MembersManager({
   const [lastLink, setLastLink] = React.useState<string | null>(null);
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
-  const atLimit = plan === "free" && members.length + invites.length >= FREE_LIMIT;
+  // Limite vem do servidor (lib/limits) — fonte única com as Server Actions.
+  const atLimit = !memberUsage.allowed;
 
   async function handleInvite(event: React.FormEvent) {
     event.preventDefault();
@@ -112,7 +113,9 @@ export function MembersManager({
       <CardHeader>
         <CardTitle className="text-base">Membros</CardTitle>
         <CardDescription>
-          {plan === "free" ? "Plano Free: até 2 membros. " : ""}
+          {memberUsage.limit !== null
+            ? `Plano Grátis: ${memberUsage.current} de ${memberUsage.limit} membros (convites pendentes contam). `
+            : ""}
           Convide colaboradores e gerencie papéis.
         </CardDescription>
       </CardHeader>
@@ -165,8 +168,11 @@ export function MembersManager({
             </div>
             {atLimit && (
               <p className="text-xs text-warning">
-                Limite do plano Free atingido. Faça upgrade para o Pro para
-                convidar mais.
+                Limite do plano Grátis atingido.{" "}
+                <Link href="/settings/billing" className="font-medium underline">
+                  Faça upgrade para o Pro
+                </Link>{" "}
+                para convidar mais.
               </p>
             )}
             {lastLink && (

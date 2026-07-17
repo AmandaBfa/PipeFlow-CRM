@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+import { canAddMember } from "@/lib/limits";
 import { getSessionUser } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { inviteUrl, sendInvitationEmail } from "@/lib/resend";
@@ -15,8 +16,6 @@ import {
   type WorkspaceRole,
 } from "@/lib/workspace";
 import type { MutationResult } from "./types";
-
-const FREE_MEMBER_LIMIT = 2;
 
 interface InviteResult extends MutationResult {
   inviteUrl?: string;
@@ -44,29 +43,14 @@ export async function inviteMember(
     return { ok: false, error: "Apenas administradores podem convidar." };
   }
 
-  const supabase = await createClient();
-
-  // Limite do plano Free: máx. 2 membros (contando convites pendentes).
-  if (workspace.plan === "free") {
-    const [{ count: memberCount }, { count: inviteCount }] = await Promise.all([
-      supabase
-        .from("workspace_members")
-        .select("user_id", { count: "exact", head: true })
-        .eq("workspace_id", workspace.id),
-      supabase
-        .from("workspace_invites")
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspace.id),
-    ]);
-    if ((memberCount ?? 0) + (inviteCount ?? 0) >= FREE_MEMBER_LIMIT) {
-      return {
-        ok: false,
-        error:
-          "O plano Free permite até 2 membros. Faça upgrade para o Pro para convidar mais.",
-      };
-    }
+  // Limite do plano (Free: máx. 2 membros, contando convites pendentes) —
+  // fonte única em `lib/limits`. O RPC de aceite reforça isso no banco.
+  const limit = await canAddMember(workspace);
+  if (!limit.allowed) {
+    return { ok: false, error: limit.reason ?? "Limite do plano atingido." };
   }
 
+  const supabase = await createClient();
   const token = randomBytes(24).toString("base64url");
   const { error } = await supabase.from("workspace_invites").insert({
     workspace_id: workspace.id,

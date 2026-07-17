@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { canAddLead } from "@/lib/limits";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 import { leadSchema, type LeadInput } from "@/lib/validations/lead";
@@ -17,22 +18,13 @@ export async function createLead(input: LeadInput): Promise<MutationResult> {
   const workspace = await getCurrentWorkspace();
   if (!workspace) return { ok: false, error: "Nenhum workspace ativo." };
 
-  const supabase = await createClient();
-
-  // Limite do plano Free: máx. 50 leads (Pro é ilimitado).
-  if (workspace.plan === "free") {
-    const { count } = await supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("workspace_id", workspace.id);
-    if ((count ?? 0) >= 50) {
-      return {
-        ok: false,
-        error: "O plano Free permite até 50 leads. Faça upgrade para o Pro.",
-      };
-    }
+  // Limite do plano (Free: máx. 50 leads) — fonte única em `lib/limits`.
+  const limit = await canAddLead(workspace);
+  if (!limit.allowed) {
+    return { ok: false, error: limit.reason ?? "Limite do plano atingido." };
   }
 
+  const supabase = await createClient();
   const { error } = await supabase.from("leads").insert({
     workspace_id: workspace.id,
     name: parsed.data.name,
@@ -44,7 +36,13 @@ export async function createLead(input: LeadInput): Promise<MutationResult> {
     owner_id: parsed.data.ownerId || null,
   });
 
-  if (error) return { ok: false, error: "Não foi possível salvar o lead." };
+  if (error) {
+    // Backstop do banco (trigger) caso a checagem acima passe por corrida.
+    if (error.message.includes("lead_limit_reached")) {
+      return { ok: false, error: limit.reason ?? "Limite do plano atingido." };
+    }
+    return { ok: false, error: "Não foi possível salvar o lead." };
+  }
   revalidatePath("/leads");
   revalidatePath("/dashboard");
   return { ok: true };

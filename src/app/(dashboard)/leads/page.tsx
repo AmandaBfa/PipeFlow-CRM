@@ -4,7 +4,8 @@ import { LeadsProvider } from "@/components/leads/leads-provider";
 import { LeadsView } from "@/components/leads/leads-view";
 import { getLeads } from "@/lib/data/leads";
 import { LEAD_STATUSES, type LeadStatus } from "@/lib/lead-status";
-import { getWorkspaceMembers } from "@/lib/workspace";
+import { canAddLead } from "@/lib/limits";
+import { getCurrentWorkspace, getWorkspaceMembers } from "@/lib/workspace";
 
 export const metadata: Metadata = {
   title: "Leads · PipeFlow CRM",
@@ -20,9 +21,11 @@ export default async function LeadsPage({
   const status = searchParams.status ?? "all";
   const owner = searchParams.owner ?? "all";
 
-  const [leads, members] = await Promise.all([
+  const workspace = await getCurrentWorkspace();
+  const [leads, members, leadUsage] = await Promise.all([
     getLeads({ q, status, owner }),
     getWorkspaceMembers(),
+    canAddLead(workspace),
   ]);
 
   const statusFilter = (LEAD_STATUSES as readonly string[]).includes(status)
@@ -36,6 +39,7 @@ export default async function LeadsPage({
       search={q}
       statusFilter={statusFilter}
       ownerFilter={owner}
+      leadUsage={leadUsage}
     >
       <LeadsView />
     </LeadsProvider>

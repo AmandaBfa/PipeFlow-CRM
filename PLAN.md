@@ -147,14 +147,16 @@
 
 **Objetivo:** planos Free/Pro com billing automatizado.
 
-- [ ] Produtos/preços no Stripe (Pro R$49/mês); `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
-- [~] Estado de billing no banco: coluna `plan` em `workspaces` + tabela `subscriptions` (`stripe_customer_id`, `stripe_subscription_id`, `stripe_price_id`, `plan`, `status`, `current_period_end`, `cancel_at_period_end`) — criadas e com **RLS** na aula 3.2 (escrita restrita à `service_role`). **Falta** o webhook popular/sincronizar
-- [ ] Route Handler `api/stripe/checkout` → Stripe Checkout
-- [ ] Route Handler `api/stripe/webhook` → ativa/desativa plano (verificar assinatura do webhook)
-- [ ] Customer Portal para gerenciar assinatura
-- [~] **Enforcement dos limites do Free no server:** **máx. 2 membros** ✅ (convite + aceite, aula 3.5); **falta** o limite de 50 leads
+- [x] Produtos/preços no Stripe (Pro recorrente/mês); `STRIPE_PRO_PRICE_ID` (só-servidor) + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- [x] Estado de billing no banco: coluna `plan` em `workspaces` + tabela `subscriptions` (`stripe_customer_id`, `stripe_subscription_id`, `stripe_price_id`, `plan`, `status`, `current_period_end`, `cancel_at_period_end`) — criadas e com **RLS** na aula 3.2 (escrita restrita à `service_role`); **o webhook popula/sincroniza** (aula 4.x)
+- [x] **Checkout via Server Action** (`createCheckoutSession`) → Stripe Checkout — *não* usa Route Handler (o webhook é a ÚNICA exceção)
+- [x] Route Handler `api/webhooks/stripe` → ativa/desativa plano, com **verificação da assinatura** sobre o body cru (aula 4.2)
+- [x] Customer Portal para gerenciar assinatura (`createPortalSession`, Server Action)
+- [x] **Enforcement dos limites do Free no server:** **máx. 2 membros** (convite + aceite, aula 3.5) **e 50 leads** (trigger no banco + `canAddLead`/`canAddMember` em `lib/limits.ts`)
 
-**Aceite:** upgrade via Checkout ativa o Pro pelo webhook; limites do Free impedem a criação excedente; portal cancela/gerencia.
+**Aceite:** ✅ upgrade via Checkout ativa o Pro pelo webhook; limites do Free impedem a criação excedente; portal cancela/gerencia.
+
+> **Aulas 4.1 & 4.2 — Monetização com Stripe (concluídas):** fecha o **Milestone 8**. **Checkout** e **Customer Portal** via **Server Actions** (`lib/actions/billing.ts` — `createCheckoutSession` com `client_reference_id`/`metadata` de `workspace_id`+`user_id`; `createPortalSession`), ambos **admin-only** e com `redirect` para a URL do Stripe. **Webhook** como a **ÚNICA exceção Route Handler** do projeto — `src/app/api/webhooks/stripe/route.ts` (rota pública; autenticidade pela **verificação de assinatura** sobre o **body cru**, `constructEvent`): trata `checkout.session.completed`→Pro, `customer.subscription.deleted`→Free e `invoice.payment_failed`→carência (`past_due` mantém Pro), mais `customer.subscription.updated` (mantém o Portal em sincronia). Sincroniza via **service_role** (`lib/supabase/admin.ts`) tanto `subscriptions` (fonte de verdade) quanto `workspaces.plan` (efetivo), idempotente. **Limites do Free** centralizados em `lib/limits.ts` (`FREE_LIMITS = { leads: 50, members: 2 }`, `canAddLead`/`canAddMember`), consumidos pelas Server Actions (`createLead`/`inviteMember`) e pela UI (banner + botões desabilitados em leads/membros); o de **50 leads** é **inviolável no banco** (trigger `enforce_free_lead_limit`, `SECURITY DEFINER`), com paridade ao de membros (RPC `accept_invitation`). Nova **página `/settings/billing`**: plano atual + status, uso ("X de 50 leads", "Y de 2 membros"), comparativo **Free vs Pro** e botões assinar/gerenciar. Correção de cancelamento: o Portal às vezes usa `cancel_at` (data) em vez de `cancel_at_period_end` — o webhook agora considera os dois. Verificado: `typecheck`/`lint`/`build` + **e2e fiel** (webhook assinado com HMAC-SHA256 sobre o payload) + **pagamento real** no navegador (cartão 4242) pelo túnel `stripe listen` (`checkout.session.completed`→`[200]`→`plan=pro`, `subscriptions` sincronizada) + bloqueio do 51º lead comprovado (usuário **e** `service_role`). CLAUDE.md atualizado (§3 rota única do webhook, §5 modelo de dados com `profiles`/`subscriptions`, §7 envs do Stripe).
 
 ---
 

@@ -43,22 +43,25 @@ pipeflow-crm/
 │  │  │  ├─ dashboard/      # métricas + funil (Recharts)
 │  │  │  ├─ settings/       # workspace, membros, billing
 │  │  │  └─ layout.tsx      # sidebar + workspace switcher
+│  │  ├─ invite/[token]/    # aceite de convite (rota pública)
 │  │  ├─ api/
-│  │  │  ├─ stripe/webhook/ # ativa/desativa plano
-│  │  │  └─ .../route.ts    # demais route handlers
+│  │  │  └─ webhooks/stripe/ # webhook do Stripe — ÚNICO route handler
 │  │  ├─ layout.tsx         # root layout (fontes, providers)
 │  │  └─ globals.css        # Tailwind + tokens de tema
 │  ├─ components/
 │  │  ├─ ui/                # componentes shadcn/ui (gerados)
 │  │  └─ <feature>/         # componentes por domínio (leads, pipeline...)
 │  ├─ lib/
-│  │  ├─ supabase/          # server.ts, client.ts, middleware.ts
-│  │  ├─ stripe/            # client + helpers de plano
+│  │  ├─ supabase/          # server.ts, client.ts, proxy.ts, admin.ts
+│  │  ├─ actions/           # Server Actions (auth, lead, deal, member, billing…)
+│  │  ├─ data/              # leitura server-side (leads, deals, activities…)
 │  │  ├─ validations/       # schemas Zod
+│  │  ├─ stripe.ts          # client Stripe (somente-servidor)
+│  │  ├─ resend.ts          # e-mail de convites
 │  │  └─ utils.ts           # cn() e helpers
 │  ├─ hooks/                # React hooks client-side
-│  ├─ types/                # tipos globais + database.types.ts (gerado)
-│  └─ middleware.ts         # refresh de sessão Supabase
+│  ├─ types/                # tipos globais + supabase.ts (tipos do banco)
+│  └─ middleware.ts         # refresh de sessão + proteção de rota (lib/supabase/proxy.ts)
 ├─ .env.local               # segredos (nunca commitar)
 └─ CLAUDE.md
 ```
@@ -80,14 +83,21 @@ pipeflow-crm/
 
 ## 5. Modelo de Dados (essencial)
 
-Tabelas principais (todas em `snake_case`, com `workspace_id` para isolamento):
+Tabelas principais (todas em `snake_case`; quase todas com `workspace_id` para
+isolamento — `profiles` é por usuário):
 
-- `workspaces` — empresa/time (nome, plano, stripe_customer_id, stripe_subscription_id)
+- `profiles` — espelho de `auth.users` (full_name, email, avatar_url); o client não lê `auth.users`, então é daqui que vêm os nomes dos membros
+- `workspaces` — empresa/time (name, `plan` `free`|`pro` **efetivo**, owner_id)
 - `workspace_members` — junção user↔workspace com `role` (`admin` | `member`)
-- `invitations` — convites por e-mail pendentes (token, expires_at)
+- `workspace_invites` — convites por e-mail pendentes (email, role, token, expires_at, invited_by)
+- `subscriptions` — billing do Stripe, 1:1 com o workspace (stripe_customer_id, stripe_subscription_id, stripe_price_id, plan, status, current_period_end, cancel_at_period_end)
 - `leads` — nome, email, phone, company, position, status, owner_id, workspace_id
 - `deals` — title, value, stage, lead_id, owner_id, due_date, workspace_id
 - `activities` — type (`call`|`email`|`meeting`|`note`), description, author_id, lead_id, created_at
+
+> **Plano:** `workspaces.plan` é o plano **efetivo** (leitura rápida para checar
+> limites); `subscriptions` é a **fonte de verdade** do billing. O webhook do
+> Stripe sincroniza os dois.
 
 **Regras de negócio-chave:**
 
@@ -132,8 +142,9 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_PRO_PRICE_ID=
 STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
 RESEND_API_KEY=
 NEXT_PUBLIC_APP_URL=
 ```
